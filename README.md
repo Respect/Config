@@ -1,6 +1,12 @@
 Samples (not implemented yet)
 =============================
 
+Key principles:
+
+* You can create any PHP instance of any class using just INI files
+* INI configurations file only (PHP developers should be familiar with them)
+* You can mix INI and PHP for complex configurators or to obtain performance
+
 Case 1: INI based injector configuration
 ----------------------------------------
 
@@ -36,8 +42,6 @@ Based on http://components.symfony-project.org/dependency-injection/trunk/book/0
 Case 2: Mixed INI/PHP 
 ----------------------------------------
 
-Based on http://components.symfony-project.org/dependency-injection/trunk/book/05-Service-Description
-
 ### myconfig.ini ###
 
     db_driver = "mysql"
@@ -60,8 +64,6 @@ Based on http://components.symfony-project.org/dependency-injection/trunk/book/0
 
 Case 3: INI Configuration using methods and constructors
 ----------------------------------------
-
-Based on http://components.symfony-project.org/dependency-injection/trunk/book/05-Service-Description
 
 ### myconfig.ini ###
 
