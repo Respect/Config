@@ -8,7 +8,7 @@ Based on http://components.symfony-project.org/dependency-injection/trunk/book/0
 
 ### myconfig.ini ###
 
-    smtp_host             = "smtp.gmail.com"
+    smtp_host = "smtp.gmail.com"
 
     [smtp_config]
     auth     = "login"
