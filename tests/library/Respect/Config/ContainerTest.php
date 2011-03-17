@@ -59,4 +59,55 @@ INI;
         $this->assertEquals('stdClass', $instantiator->getClassName());
     }
 
+    public function testInstantiatorParams()
+    {
+        $ini = <<<INI
+[foo stdClass]
+foo = bar
+baz = bat
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $instantiator = $c->getItem('foo', true);
+        $this->assertEquals('bar', $instantiator->getParam('foo'));
+        $this->assertEquals('bat', $instantiator->getParam('baz'));
+    }
+
+    public function testInstantiatorParamsArray()
+    {
+        $ini = <<<INI
+[foo stdClass]
+foo[abc] = bar
+foo[def] = bat
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $instantiator = $c->getItem('foo', true);
+        $expected = array(
+            'abc' => 'bar',
+            'def' => 'bat'
+        );
+        $this->assertEquals($expected, $instantiator->getParam('foo'));
+    }
+
+    public function testInstantiatorParamsBrackets()
+    {
+        $ini = <<<INI
+[foo stdClass]
+foo[abc] = [bat, blz]
+foo[def] = bat
+baz = [bat, blz]
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $instantiator = $c->getItem('foo', true);
+        $expectedFoo = array(
+            'abc' => array('bat', 'blz'),
+            'def' => 'bat'
+        );
+        $expectedBaz = array('bat', 'blz');
+        $this->assertEquals($expectedFoo, $instantiator->getParam('foo'));
+        $this->assertEquals($expectedBaz, $instantiator->getParam('baz'));
+    }
+
 }

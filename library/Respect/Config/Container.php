@@ -4,8 +4,9 @@ namespace Respect\Config;
 
 use UnexpectedValueException;
 use InvalidArgumentException;
+use ArrayAccess;
 
-class Container
+class Container implements ArrayAccess
 {
 
     protected $items = array();
@@ -61,37 +62,53 @@ class Container
 
         if (is_array($value))
             foreach ($value as $property => $pValue)
-                $this->setInstantiatorParams($instantiator, $property, $pValue);
+                $instantiator->setParam($property, $this->parseValue($pValue));
         else
-            $this->setInstantiatorParams($instantiator, '__construct', $value);
+            $instantiator->setParam('__construct', $this->parseValue($value));
 
         $this->setItem($keyName, $instantiator);
     }
 
-    protected function setInstantiatorParams($instantiator, $key, $value)
+    protected function parseValue($value)
     {
         if (is_array($value))
-            foreach ($value as $subValue)
-                $this->setInstantiatorParams($instantiator, $key, $subValue);
+            return $this->parseArrayValue($value);
         else
-            $instantiator->setParam($key, $this->parseValue($value));
+            return $this->parseSingleValue($value);
     }
 
-    protected function parseValue($value)
+    protected function parseSingleValue($value)
     {
         $value = trim($value);
         if (false === strpos($value, '['))
-            return $value;
+            return $this->parseConstants($value);
         elseif (false === strpos($value, ']'))
-            return $value;
+            return $this->parseConstants($value);
         else
             return $this->parseBrackets($value);
+    }
+
+    protected function parseConstants($value)
+    {
+        if (preg_match('/^[A-Z_]+([:]{2}[A-Z_]+)?$/', $value) && defined($value))
+            return constant($value);
+        else
+            return $value;
+    }
+
+    protected function parseArrayValue($value)
+    {
+        foreach ($value as &$subValue)
+            $subValue = $this->parseValue($subValue);
+        return $value;
     }
 
     protected function parseBrackets($value)
     {
         if (preg_match('/^\[(.*?,.*?)+\]$/', $value, $matches))
-            return $this->parseArgumentList($value, $matches[1]);
+            return $this->parseArgumentList($matches[1]);
+        elseif (preg_match('/^\[(\w+)+\]$/', $value, $matches))
+            return $this->getItem($matches[1], true);
         else
             return $this->parseVariables($value);
     }
@@ -102,7 +119,7 @@ class Container
         return preg_replace_callback(
             '/\[(\w+)\]/',
             function($match) use($vars) {
-                return isset($vars[$match[1]]) ? (string) $vars[$match[1]] : '';
+                return isset($vars[$match[1]]) ? $vars[$match[1]] : '';
             }, $value
         );
     }
@@ -144,6 +161,46 @@ class Container
     public function hasItem($name)
     {
         return isset($this->items[$name]);
+    }
+
+    public function __set($name, $value)
+    {
+        return $this->setItem($name, $value);
+    }
+
+    public function __get($name)
+    {
+        return $this->getItem($name);
+    }
+
+    public function __isset($name)
+    {
+        return $this->hasItem($name);
+    }
+
+    public function __unset($name)
+    {
+        return $this->removeItem($name);
+    }
+
+    public function offsetExists($name)
+    {
+        return $this->hasItem($name);
+    }
+
+    public function offsetGet($name)
+    {
+        return $this->getItem($name);
+    }
+
+    public function offsetSet($name, $value)
+    {
+        return $this->setItem($name, $value);
+    }
+
+    public function offsetUnset($name)
+    {
+        return $this->removeItem($name);
     }
 
 }
