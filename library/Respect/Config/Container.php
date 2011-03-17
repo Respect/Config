@@ -34,29 +34,45 @@ class Container implements ArrayAccess
             $this->parseItem($key, $value);
     }
 
+    protected function keyHasInstantiator($key)
+    {
+        return false !== stripos($key, ' ');
+    }
+
     protected function parseItem($key, $value)
     {
         $key = trim($key);
-        if (false !== stripos($key, ' '))
+        if ($this->keyHasInstantiator($key))
             $this->parseInstantiator($key, $value);
         else
             $this->parseStandardItem($key, $value);
     }
 
+    protected function parseSubValues($value)
+    {
+        foreach ($value as &$subValue)
+            $subValue = $this->parseValue($subValue);
+        return $value;
+    }
+
     protected function parseStandardItem($key, $value)
     {
         if (is_array($value))
-            foreach ($value as &$subValue)
-                $subValue = $this->parseValue($subValue);
+            $this->parseSubValues(&$value);
         else
             $value = $this->parseValue($value);
 
         $this->setItem($key, $value);
     }
 
+    protected function removeDuplicatedSpaces($string)
+    {
+        return preg_replace('/\s+/', ' ', $string);
+    }
+
     protected function parseInstantiator($key, $value)
     {
-        $key = preg_replace('/\s+/', ' ', $key);
+        $key = $this->removeDuplicatedSpaces($key);
         list($keyName, $keyClass) = explode(' ', $key);
         $instantiator = new Instantiator($keyClass);
 
@@ -72,20 +88,23 @@ class Container implements ArrayAccess
     protected function parseValue($value)
     {
         if (is_array($value))
-            return $this->parseArrayValue($value);
+            return $this->parseSubValues($value);
         else
             return $this->parseSingleValue($value);
+    }
+
+    protected function hasCompleteBrackets($value)
+    {
+        return false !== strpos($value, '[') && false !== strpos($value, ']');
     }
 
     protected function parseSingleValue($value)
     {
         $value = trim($value);
-        if (false === strpos($value, '['))
-            return $this->parseConstants($value);
-        elseif (false === strpos($value, ']'))
-            return $this->parseConstants($value);
-        else
+        if ($this->hasCompleteBrackets($value))
             return $this->parseBrackets($value);
+        else
+            return $this->parseConstants($value);
     }
 
     protected function parseConstants($value)
@@ -96,19 +115,24 @@ class Container implements ArrayAccess
             return $value;
     }
 
-    protected function parseArrayValue($value)
+    protected function matchSequence(&$value)
     {
-        foreach ($value as &$subValue)
-            $subValue = $this->parseValue($subValue);
-        return $value;
+        if (preg_match('/^\[(.*?,.*?)\]$/', $value, $match))
+            return (boolean) ($value = $match[1]);
+    }
+
+    protected function matchReference(&$value)
+    {
+        if (preg_match('/^\[(\w+)+\]$/', $value, $match))
+            return (boolean) ($value = $match[1]);
     }
 
     protected function parseBrackets($value)
     {
-        if (preg_match('/^\[(.*?,.*?)\]$/', $value, $matches))
-            return $this->parseArgumentList($matches[1]);
-        elseif (preg_match('/^\[(\w+)+\]$/', $value, $matches))
-            return $this->getItem($matches[1], true);
+        if ($this->matchSequence($value))
+            return $this->parseArgumentList($value);
+        elseif ($this->matchReference($value))
+            return $this->getItem($value, true);
         else
             return $this->parseVariables($value);
     }
@@ -119,17 +143,14 @@ class Container implements ArrayAccess
         return preg_replace_callback(
             '/\[(\w+)\]/',
             function($match) use($vars) {
-                return isset($vars[$match[1]]) ? $vars[$match[1]] : '';
+                return $vars[$match[1]] ? : '';
             }, $value
         );
     }
 
     protected function parseArgumentList($value)
     {
-        $values = explode(',', $value);
-        foreach ($values as &$v)
-            $v = $this->parseValue($v);
-        return $values;
+        return $this->parseSubValues(explode(',', $value));
     }
 
     protected function lazyLoad($name)
