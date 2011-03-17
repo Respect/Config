@@ -105,7 +105,7 @@ class Container implements ArrayAccess
 
     protected function parseBrackets($value)
     {
-        if (preg_match('/^\[(.*?,.*?)+\]$/', $value, $matches))
+        if (preg_match('/^\[(.*?,.*?)\]$/', $value, $matches))
             return $this->parseArgumentList($matches[1]);
         elseif (preg_match('/^\[(\w+)+\]$/', $value, $matches))
             return $this->getItem($matches[1], true);
