@@ -14,9 +14,18 @@ class Instantiator
         $this->className = $className;
     }
 
+    public function getClassName()
+    {
+        return $this->className;
+    }
+
     public function getInstance()
     {
+        $className = new $this->className;
+        $instance = new $className;
+        return $instance;
         //From params:
+        //0. find static factory methods
         //1. find constructor params
         //2. instantiate
         //3. call remaining methods and property sets on order
@@ -38,54 +47,14 @@ class Instantiator
         $this->params[$name] = $value;
     }
 
-    public function removeItem($name)
+    public function removeParam($name)
     {
         unset($this->params[$name]);
     }
 
-    public function hasItem($name)
+    public function hasParam($name)
     {
         return isset($this->params[$name]);
-    }
-
-    public function __set($name, $value)
-    {
-        return $this->setParam($name, $value);
-    }
-
-    public function __get($name)
-    {
-        return $this->getParam($name);
-    }
-
-    public function __isset($name)
-    {
-        return $this->hasItem($name);
-    }
-
-    public function __unset($name)
-    {
-        return $this->removeItem($name);
-    }
-
-    public function offsetExists($name)
-    {
-        return $this->hasItem($name);
-    }
-
-    public function offsetGet($name)
-    {
-        return $this->getParam($name);
-    }
-
-    public function offsetSet($name, $value)
-    {
-        return $this->setParam($name, $value);
-    }
-
-    public function offsetUnset($name)
-    {
-        return $this->removeItem($name);
     }
 
 }
