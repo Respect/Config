@@ -110,4 +110,42 @@ INI;
         $this->assertEquals($expectedBaz, $instantiator->getParam('baz'));
     }
 
+    public function testInstanasdkets()
+    {
+        $ini = <<<INI
+db_driver = "mysql"
+db_host   = "localhost"
+db_name   = "new_guide"
+db_user   = "root"
+db_pass   = ""
+db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
+
+smtp_host             = "smtp.gmail.com"
+
+[smtp_config]
+auth     = "login"
+username = "foo"
+password = "bar"
+ssl      = "ssl"
+port     = "495"
+
+
+[connection PDO]
+getAvailableDrivers[] =
+dsn            = [db_dsn]
+username       = [db_user]
+password       = [db_pass]
+setAttribute[] = [PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTIONS]
+setAttribute[] = [PDO::ATTR_CASE, PDO::CASE_NORMAL]
+exec[]         = "SET NAMES UTF-8"
+exec[]         = "SET CHARSET UTF-8"
+
+
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        print_r($c);
+        print_r($c->connection);
+    }
+
 }
