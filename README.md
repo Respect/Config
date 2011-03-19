@@ -180,6 +180,9 @@ myconfig.ini:
     [connection PDO]
     dsn      = "mysql:host=localhost;dbname=my_database"
     username = "my_user"
+    password = "my_pass"
+    setAttribute = [PDO::ATTR_ERRMODE, PDO::ATTR_EXCEPTION]
+    exec[]       = "SET NAMES UTF-8"
 
 Instance Properties
 -------------------
