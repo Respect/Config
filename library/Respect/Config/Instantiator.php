@@ -7,9 +7,8 @@ use ReflectionClass;
 class Instantiator
 {
 
-    protected $instance;
     protected $reflection;
-    protected $constructorParams = array();
+    protected $constructor = array();
     protected $className;
     protected $params = array();
     protected $staticMethodCalls = array();
@@ -19,8 +18,13 @@ class Instantiator
     public function __construct($className)
     {
         $this->reflection = new ReflectionClass($className);
-        $this->constructorParams = $this->getConstructorParamsNames($this->reflection);
+        $this->constructor = $this->findConstructorParams($this->reflection);
         $this->className = $className;
+    }
+
+    public function __invoke()
+    {
+        return call_user_func_array(array($this, 'getInstance'), func_get_args());
     }
 
     public function getClassName()
@@ -31,34 +35,31 @@ class Instantiator
     public function getInstance()
     {
         $className = $this->className;
-/*
-        foreach ($this->staticMethodCalls as $arguments) {
-            $methodName = array_shift($arguments);
-            $r = call_user_func_array("$className::$methodName", $arguments);
-            if ($r instanceof $className)
-                $instance = $r;
+
+        foreach ($this->staticMethodCalls as $methodCalls) {
+            $this->performMethodCalls($className, $methodCalls,
+                function($result) use ($className, &$instance) {
+                    if ($result instanceof $className)
+                        $instance = $result;
+                }
+            );
         }
-*/
+
         if (!isset($instance))
-            if (empty($this->constructorParams))
+            if (empty($this->constructor))
                 $instance = new $className;
             else
-                $instance = $this->reflection->newInstanceArgs($this->constructorParams);
+                $instance = $this->reflection->newInstanceArgs(
+                        $this->cleanupParams($this->constructor)
+                );
 
-        foreach ($this->methodCalls as $arguments) {
-            $methodName = array_shift($arguments);
-            call_user_func_array(array($instance, $methodName), $arguments);
-        }
+        foreach ($this->methodCalls as $methodCalls)
+            $this->performMethodCalls($instance, $methodCalls);
 
         foreach ($this->propertySetters as $property => $value)
             $instance->{$property} = $value;
 
         return $instance;
-    }
-
-    public function __invoke()
-    {
-        return call_user_func_array(array($this, 'getInstance'), func_get_args());
     }
 
     public function getParam($name)
@@ -71,27 +72,53 @@ class Instantiator
         if ($this->matchStaticMethod($name))
             $this->staticMethodCalls[] = array($name, $value);
         elseif ($this->matchConstructorParam($name))
-            $this->constructorParams[$name] = $value;
+            $this->constructor[$name] = $value;
         elseif ($this->matchFullConstructor($name, $value))
-            $this->constructorParams = $value;
+            $this->constructor = $value;
         elseif ($this->matchMethod($name))
             $this->methodCalls[] = array($name, $value);
-        elseif ($this->matchProperty($name))
+        else
             $this->propertySetters[$name] = $value;
 
         $this->params[$name] = $value;
     }
 
-    protected function getConstructorParamsNames(ReflectionClass $class)
+    protected function cleanupParams(array $params)
+    {
+        while (null === end($params))
+            unset($params[key($params)]);
+        return $params;
+    }
+
+    protected function findConstructorParams(ReflectionClass $class)
     {
         $params = array();
         $constructor = $class->getConstructor();
+
         if (!$constructor)
             return array();
-        foreach ($constructor->getParameters() as $param) {
-            $params[$param->getName()] = $param->isDefaultValueAvailable() ? $param->getDefaultValue() : null;
-        }
+
+        foreach ($constructor->getParameters() as $param)
+            $params[$param->getName()] = $param->isDefaultValueAvailable() ?
+                $param->getDefaultValue() : null;
+
         return $params;
+    }
+
+    protected function matchConstructorParam($name)
+    {
+        return array_key_exists($name, $this->constructor);
+    }
+
+    protected function matchFullConstructor($name, $value)
+    {
+        return $name == '__construct'
+        || ( $name == $this->className && stripos($this->className, '\\'));
+    }
+
+    protected function matchMethod($name)
+    {
+        return $this->reflection->hasMethod($name);
     }
 
     protected function matchStaticMethod($name)
@@ -100,24 +127,20 @@ class Instantiator
         && $this->reflection->getMethod($name)->isStatic();
     }
 
-    protected function matchConstructorParam($name)
+    protected function performMethodCalls($class, array $methodCalls, $resultCallback=null)
     {
-        return array_key_exists($name, $this->constructorParams);
-    }
-
-    protected function matchFullConstructor($name, $value)
-    {
-        return $name == '__construct';
-    }
-
-    protected function matchMethod($name)
-    {
-        return $this->reflection->hasMethod($name);
-    }
-
-    protected function matchProperty($name)
-    {
-        return $this->reflection->hasProperty($name);
+        list($methodName, $calls) = $methodCalls;
+        foreach ($calls as $arguments) {
+            if (is_array($arguments))
+                $result = call_user_func_array(array($class, $methodName),
+                        $this->cleanUpParams($arguments));
+            elseif (!is_null($arguments))
+                $result = call_user_func(array($class, $methodName), $arguments);
+            else
+                $result = call_user_func(array($class, $methodName));
+            if ($resultCallback)
+                $resultCallback($result);
+        }
     }
 
 }

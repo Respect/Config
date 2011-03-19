@@ -89,6 +89,8 @@ class Container implements ArrayAccess
     {
         if (is_array($value))
             return $this->parseSubValues($value);
+        elseif (empty($value))
+            return null;
         else
             return $this->parseSingleValue($value);
     }
