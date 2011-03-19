@@ -59,6 +59,29 @@ INI;
         $this->assertEquals('stdClass', $instantiator->getClassName());
     }
 
+    public function testInstantiator2()
+    {
+        $ini = <<<INI
+foo stdClass =
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $instantiator = $c->getItem('foo', true);
+        $this->assertEquals('stdClass', $instantiator->getClassName());
+    }
+
+    public function testConstants()
+    {
+        $ini = <<<INI
+foo = E_USER_ERROR
+bar = PDO::ATTR_ERRMODE
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertEquals(E_USER_ERROR, $c->foo);
+        $this->assertEquals(\PDO::ATTR_ERRMODE, $c->bar);
+    }
+
     public function testInstantiatorParams()
     {
         $ini = <<<INI

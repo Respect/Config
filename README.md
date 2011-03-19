@@ -7,12 +7,26 @@ A powerful, small, deadly simple configurator and dependency injection container
 * Uses the same native, fast parser that powers php.ini.
 * Extends the INI configuration with a custom dialect.
 * Implements lazy loading for object instances.
-* Can describe any array, instance or variable.
+
+Known Limitations
+=================
+
+* Empty strings, zeros and null are not properly treated yet.
+* Constructors with non-null default parameter values may not work properly yet.
+* The only way to use magic methods is to call them explicitly with __call
+* Cyclic references haven't been tested and may not work
+* May not work properly with the following conditions:
+    * Static and normal methods with the same names within the same class
+    * Methods and properties with same names wihin the same class
+    * Methods and properties with same names as constructor parameters
+
+Luckly, most of these limitations are known to be PHP bad practices. Keep up the
+good work and you'll never face them.
 
 Feature Guide
 =============
 
-Variable Expanding (Implemented)
+Variable Expanding
 ------------------
 
 myconfig.ini:
@@ -24,10 +38,10 @@ myconfig.ini:
 
 myapp.php:
 
-    $c = new Container('myconfig.ini:');
+    $c = new Container('myconfig.ini');
     echo $c->db_dsn; //mysql:host=localhost;dbname=my_database
 
-Sequences  (Implemented)
+Sequences
 ---------
 
 myconfig.ini:
@@ -51,24 +65,19 @@ myapp.php:
     $c = new Container('myconfig.ini:');
     print_r($c->allowed_users); //array('foo', 'bar', 'baz')
 
-Constant Evaluation  (Implemented)
+Constant Evaluation
 -------------------
 
 myconfig.ini:
 
     error_mode = PDO::ERRMODE_EXCEPTION
 
-myapp.php:
-
-    $c = new Container('myconfig.ini:');
-    print_r($c->error_mode); //2, the value of the constant
-
 Needless to say that this would work on sequences too.
 
 Instances 
 ---------
 
-Using sections (Implemented):
+Using sections
 
 myconfig.ini:
 
@@ -79,18 +88,18 @@ myapp.php:
     $c = new Container('myconfig.ini:');
     echo get_class($c->something); //stdClass
 
-Using names (Partially Implemented):
+Using names
 
 myconfig.ini:
 
-    date DateTime = 
+    date DateTime = now
 
 myapp.php:
 
     $c = new Container('myconfig.ini:');
     echo get_class($c->something); //DateTime
 
-Callbacks (Implemented):
+Callbacks
 ---------
 
 myconfig.ini:
@@ -111,7 +120,7 @@ myapp.php:
     };
     echo get_class($c->connection); //PDO
 
-Instance Passing (Implemented):
+Instance Passing
 ----------------
 
 myconfig.ini:
@@ -130,7 +139,7 @@ myapp.php:
 
 Obviously, this works on sequences too.
 
-Instance Constructor Parameters (Not Implemented Yet)
+Instance Constructor Parameters
 -------------------------------
 
 Parameter names by reflection:
@@ -155,15 +164,15 @@ myconfig.ini:
 
     connection PDO = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]
 
-Instantiation by Factory Methods (Not Implemented Yet)
---------------------------------
+Instantiation by Static Factory Methods
+---------------------------------------
 
 myconfig.ini:
 
-    [em Doctrine\ORM\EntityManager]
-    create = [[connectionOptions], [config]]
+    [y2k DateTime]
+    createFromFormat[] = [Y-m-d H:i:s, 2000-01-01 00:00:01]
 
-Instance Method Calls (Not Implemented Yet)
+Instance Method Calls
 ---------------------
 
 myconfig.ini:
@@ -171,95 +180,11 @@ myconfig.ini:
     [connection PDO]
     dsn      = "mysql:host=localhost;dbname=my_database"
     username = "my_user"
-    password = "my_pass"
-    setAttribute = [PDO::ATTR_ERRMODE, PDO::ATTR_EXCEPTION]
 
-
-Instance Properties (Not Implemented Yet)
+Instance Properties
 -------------------
 
 myconfig.ini:
 
     [something stdClass]
     foo = "bar"
-
-Use Cases
-=========
-
-Case 1: INI based injector configuration (not working yet)
-----------------------------------------
-
-Based on http://components.symfony-project.org/dependency-injection/trunk/book/05-Service-Description
-
-myconfig.ini:
-
-    smtp_host = "smtp.gmail.com"
-
-    [smtp_config]
-    auth     = "login"
-    username = "foo"
-    password = "bar"
-    ssl      = "ssl"
-    port     = "495"
-
-    [smtpTransport Zend_Mail_Transport_Smtp]
-    host   = [smtp_host]
-    config = [smtp_config]
-
-    [mailer Zend_Mail]
-    setDefaultTransport = [smtpTransport]
-   
-
-myapp.php:
-
-    $c = new Container('myconfig.ini:');
-    $c->mailer; //returns a configured Zend_Mail according to the ini file
-    
-Case 2: Mixed INI/PHP (this already works!)
-----------------------------------------
-
-myconfig.ini:
-
-    db_driver = "mysql"
-    db_host   = "localhost"
-    db_name   = "my_database"
-    db_user   = "root"
-    db_pass   = ""
-    db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
-   
-
-myapp.php:
-
-    $c = new Container('myconfig.ini:');
-    $c->connection = function() use($c) {
-        return new PDO($c->db_dsn, $c->db_user, $c->db_pass);
-    };
-
-Case 3: INI Configuration using methods and constructors (not working yet)
-----------------------------------------
-
-myconfig.ini:
-
-    db_driver = "mysql"
-    db_host   = "localhost"
-    db_name   = "my_database"
-    db_user   = "root"
-    db_pass   = ""
-    db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
-    
-    [connection PDO]
-    dsn            = [db_dsn]   ; this is a constructor parameter
-    username       = [db_user]  ; this is a constructor parameter
-    password       = [db_pass]  ; this is a constructor parameter
-    setAttribute[] = [PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTIONS] 
-    setAttribute[] = [PDO::ATTR_CASE, PDO::CASE_NORMAL]
-    exec[]         = "SET NAMES UTF-8"
-    exec[]         = "SET CHARSET UTF-8"
-   
-
-myapp.php:
-
-    $c = new Container('myconfig.ini:');
-    $c->connection; //returns PDO configured with setAttribute() and exec()
-
-

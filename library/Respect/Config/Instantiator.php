@@ -7,6 +7,7 @@ use ReflectionClass;
 class Instantiator
 {
 
+    protected $instance;
     protected $reflection;
     protected $constructor = array();
     protected $className;
@@ -32,9 +33,13 @@ class Instantiator
         return $this->className;
     }
 
-    public function getInstance()
+    public function getInstance($forceNew=false)
     {
+        if ($this->instance && !$forceNew)
+            return $this->instance;
+
         $className = $this->className;
+        $instance = $this->instance;
 
         foreach ($this->staticMethodCalls as $methodCalls) {
             $this->performMethodCalls($className, $methodCalls,
@@ -45,7 +50,7 @@ class Instantiator
             );
         }
 
-        if (!isset($instance))
+        if (empty($instance))
             if (empty($this->constructor))
                 $instance = new $className;
             else
@@ -69,6 +74,8 @@ class Instantiator
 
     public function setParam($name, $value)
     {
+        $value = $this->processValue($value);
+
         if ($this->matchStaticMethod($name))
             $this->staticMethodCalls[] = array($name, $value);
         elseif ($this->matchConstructorParam($name))
@@ -105,12 +112,23 @@ class Instantiator
         return $params;
     }
 
+    protected function processValue($value)
+    {
+        if ($value instanceof self)
+            $value = $value->getInstance();
+        elseif (is_array($value))
+            foreach ($value as &$subValue)
+                $subValue = $this->processValue($subValue);
+
+        return $value;
+    }
+
     protected function matchConstructorParam($name)
     {
         return array_key_exists($name, $this->constructor);
     }
 
-    protected function matchFullConstructor($name, $value)
+    protected function matchFullConstructor($name, &$value)
     {
         return $name == '__construct'
         || ( $name == $this->className && stripos($this->className, '\\'));
