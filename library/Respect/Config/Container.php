@@ -22,6 +22,16 @@ class Container extends ArrayObject
             throw new InvalidArgumentException("Invalid input. Must be a valid file or array");
     }
 
+    public function getItem($name, $raw=false)
+    {
+        if (!isset($this[$name]))
+            throw new InvalidArgumentException("Item $name not found");
+        elseif ($raw || !is_callable($this[$name]))
+            return $this[$name];
+        else
+            return $this->lazyLoad($name);
+    }
+
     public function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
@@ -64,7 +74,7 @@ class Container extends ArrayObject
         else
             $value = $this->parseValue($value);
 
-        $this->setItem($key, $value);
+        $this->offsetSet($key, $value);
     }
 
     protected function removeDuplicatedSpaces($string)
@@ -84,7 +94,7 @@ class Container extends ArrayObject
         else
             $instantiator->setParam('__construct', $this->parseValue($value));
 
-        $this->setItem($keyName, $instantiator);
+        $this->offsetSet($keyName, $instantiator);
     }
 
     protected function parseValue($value)
@@ -161,31 +171,6 @@ class Container extends ArrayObject
     {
         $callback = $this[$name];
         return $this[$name] = $callback();
-    }
-
-    public function getItem($name, $raw=false)
-    {
-        if (!$this->hasItem($name))
-            throw new InvalidArgumentException("Item $name not found");
-        elseif ($raw || !is_callable($this[$name]))
-            return $this[$name];
-        else
-            return $this->lazyLoad($name);
-    }
-
-    public function setItem($name, $value)
-    {
-        return $this->offsetSet($name, $value);
-    }
-
-    public function removeItem($name)
-    {
-        return $this->offsetunset($name);
-    }
-
-    public function hasItem($name)
-    {
-        return $this->offsetExists($name);
     }
 
 }
