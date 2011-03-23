@@ -18,13 +18,16 @@ class Container extends ArrayObject
             $this->loadArray($configurator);
         elseif (file_exists($configurator) && is_file($configurator))
             $this->loadFile($configurator);
-        else //FIXME
-            throw new InvalidArgumentException();
+        else
+            throw new InvalidArgumentException("Invalid input. Must be a valid file or array");
     }
 
     public function loadFile($configurator)
     {
-        return $this->loadArray(parse_ini_file($configurator, true));
+        $iniData = parse_ini_file($configurator, true);
+        if (!$iniData)
+            throw new InvalidArgumentException("Invalid configuration INI file");
+        return $this->loadArray($iniData);
     }
 
     public function loadArray(array $configurator)
@@ -163,7 +166,7 @@ class Container extends ArrayObject
     public function getItem($name, $raw=false)
     {
         if (!$this->hasItem($name))
-            throw new UnexpectedValueException();
+            throw new InvalidArgumentException("Item $name not found");
         elseif ($raw || !is_callable($this[$name]))
             return $this[$name];
         else

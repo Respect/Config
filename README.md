@@ -8,21 +8,6 @@ A powerful, small, deadly simple configurator and dependency injection container
 * Extends the INI configuration with a custom dialect.
 * Implements lazy loading for object instances.
 
-Known Limitations
-=================
-
-* Empty strings, zeros and null are not properly treated yet.
-* Constructors with non-null default parameter values may not work properly yet.
-* The only way to use magic methods is to call them explicitly with __call
-* Cyclic references haven't been tested and may not work
-* May not work properly with the following conditions:
-    * Static and normal methods with the same names within the same class
-    * Methods and properties with same names wihin the same class
-    * Methods and properties with same names as constructor parameters
-
-Luckly, most of these limitations are known to be PHP bad practices. Keep up the
-good work and you'll never face them.
-
 Feature Guide
 =============
 
@@ -191,6 +176,21 @@ myconfig.ini:
 
     [something stdClass]
     foo = "bar"
+
+Known Limitations
+=================
+
+* Empty strings, zeros and null are not properly treated yet.
+* Constructors with non-null default parameter values may not work properly yet.
+* The only way to use magic methods is to call them explicitly with __call
+* Circular references haven't been tested and may not work
+* May not work properly with the following conditions:
+    * Static and normal methods with the same names within the same class
+    * Methods and properties with same names wihin the same class
+    * Methods and properties with same names as constructor parameters
+
+Luckly, most of these limitations are known to be PHP bad practices. Keep up the
+good work and you'll never face them.
 
 License Information
 ===================
