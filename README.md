@@ -8,6 +8,53 @@ A powerful, small, deadly simple configurator and dependency injection container
 * Extends the INI configuration with a custom dialect.
 * Implements lazy loading for object instances.
 
+Installation
+============
+
+This is **almost** ready for production! We've tested, but it is a brand new project
+with few adopters yet. Feel completely free to contribute with any bug reports.
+
+1. PEAR Package
+
+   Respect\Config is available under a downloadable PEAR Package. To use it,
+   type the following commands in your terminal:
+
+        git clone git://github.com/Respect/Config.git RespectConfig
+        cd RespectConfig/library/Respect/Config/
+        sudo pear install package.xml
+
+   On Ubuntu, this will install it under `/usr/share/php`, make sure you add
+   that to your include_path.
+
+2. Direct Download
+
+   Just click "Download" up there, in GitHub and use the library folder.
+
+Autoloading
+-----------
+
+You can set up Respect\Config for autoloading. We recommend using the
+SplClassLoader. Here's a nice sample:
+
+
+    set_include_path('/my/library' . PATH_SEPARATOR . get_include_path());
+    require_once 'SplClassLoader.php';
+    $respectLoader = new \SplClassLoader();
+    $respectLoader->register();
+
+
+Running Tests
+-------------
+
+We didn't created our tests just for us to apreciate. To run them,
+you'll need phpunit 3.5 or greater. Then, just chdir into the `/tests` folder
+we distribute and run them like this:
+
+    cd /my/RespectConfig/tests
+    phpunit .
+
+You can tweak the phpunit.xml under that `/tests` folder to your needs.
+
 Feature Guide
 =============
 
