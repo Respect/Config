@@ -35,7 +35,7 @@ class Container extends ArrayObject
     public function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
-        if (!$iniData)
+        if (false === $iniData)
             throw new InvalidArgumentException("Invalid configuration INI file");
         return $this->loadArray($iniData);
     }

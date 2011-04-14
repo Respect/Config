@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package packagerversion="1.9.2" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
-    http://pear.php.net/dtd/tasks-1.0.xsd
-    http://pear.php.net/dtd/package-2.0
-    http://pear.php.net/dtd/package-2.0.xsd">
+<package packagerversion="1.9.2" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0     http://pear.php.net/dtd/tasks-1.0.xsd     http://pear.php.net/dtd/package-2.0     http://pear.php.net/dtd/package-2.0.xsd">
  <name>RespectConfig</name>
  <uri>http://github.com/Respect/Config</uri>
  <summary>A powerful, small, deadly simple configurator and dependency injection container made to be easy.</summary>
@@ -13,8 +10,8 @@
   <email>alexandre@gaigalas.net</email>
   <active>yes</active>
  </lead>
- <date>2011-03-30</date>
- <time>19:13:23</time>
+ <date>2011-04-14</date>
+ <time>11:26:58</time>
  <version>
   <release>0.2</release>
   <api>0.2</api>
@@ -29,7 +26,7 @@ None.
  </notes>
  <contents>
   <dir baseinstalldir="Respect/Config" name="/">
-   <file baseinstalldir="Respect/Config" md5sum="83f9528992d47b5c3dcfb6b14b527e16" name="Container.php" role="php" />
+   <file baseinstalldir="Respect/Config" md5sum="1967dec9cf7600af40fe404061e8afbd" name="Container.php" role="php" />
    <file baseinstalldir="Respect/Config" md5sum="a9e765335e69d7d3cb69701d3130b4fd" name="Instantiator.php" role="php" />
   </dir>
  </contents>
@@ -54,7 +51,7 @@ None.
     <release>alpha</release>
     <api>alpha</api>
    </stability>
-   <date>2011-03-30</date>
+   <date>2011-04-14</date>
    <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
    <notes>
 None.
