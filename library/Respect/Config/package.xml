@@ -11,7 +11,7 @@
   <active>yes</active>
  </lead>
  <date>2011-04-14</date>
- <time>11:26:58</time>
+ <time>11:45:20</time>
  <version>
   <release>0.2</release>
   <api>0.2</api>
@@ -26,7 +26,7 @@ None.
  </notes>
  <contents>
   <dir baseinstalldir="Respect/Config" name="/">
-   <file baseinstalldir="Respect/Config" md5sum="1967dec9cf7600af40fe404061e8afbd" name="Container.php" role="php" />
+   <file baseinstalldir="Respect/Config" md5sum="c20fe453c4dbe66e129df969b3a301b3" name="Container.php" role="php" />
    <file baseinstalldir="Respect/Config" md5sum="a9e765335e69d7d3cb69701d3130b4fd" name="Instantiator.php" role="php" />
   </dir>
  </contents>

@@ -11,7 +11,6 @@ class Container extends ArrayObject
 
     public function __construct($configurator=null)
     {
-        parent::__construct(array(), static::STD_PROP_LIST | static::ARRAY_AS_PROPS);
         if (is_null($configurator))
             return;
         elseif (is_array($configurator))
@@ -46,6 +45,11 @@ class Container extends ArrayObject
             $this->parseItem($key, $value);
     }
 
+    public function __get($name)
+    {
+        return $this->getItem($name);
+    }
+
     protected function keyHasInstantiator($key)
     {
         return false !== stripos($key, ' ');
@@ -60,17 +64,17 @@ class Container extends ArrayObject
             $this->parseStandardItem($key, $value);
     }
 
-    protected function parseSubValues($value)
+    protected function parseSubValues(&$value)
     {
         foreach ($value as &$subValue)
             $subValue = $this->parseValue($subValue);
         return $value;
     }
 
-    protected function parseStandardItem($key, $value)
+    protected function parseStandardItem($key, &$value)
     {
         if (is_array($value))
-            $this->parseSubValues(&$value);
+            $this->parseSubValues($value);
         else
             $value = $this->parseValue($value);
 
