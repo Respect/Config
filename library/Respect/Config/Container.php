@@ -168,7 +168,8 @@ class Container extends ArrayObject
 
     protected function parseArgumentList($value)
     {
-        return $this->parseSubValues(explode(',', $value));
+        $subValues = explode(',', $value);
+        return $this->parseSubValues($subValues);
     }
 
     protected function lazyLoad($name)
