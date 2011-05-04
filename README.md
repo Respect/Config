@@ -16,15 +16,7 @@ with few adopters yet. Feel completely free to contribute with any bug reports.
 
 1. PEAR Package
 
-   Respect\Config is available under a downloadable PEAR Package. To use it,
-   type the following commands in your terminal:
-
-        git clone git://github.com/Respect/Config.git RespectConfig
-        cd RespectConfig/library/Respect/Config/
-        sudo pear install package.xml
-
-   On Ubuntu, this will install it under `/usr/share/php`, make sure you add
-   that to your include_path.
+   Instructions on [our PEAR Channel](http://respect.github.com/pear)
 
 2. Direct Download
 
