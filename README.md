@@ -65,6 +65,8 @@ myapp.php:
     $c = new Container('myconfig.ini');
     echo $c->db_dsn; //mysql:host=localhost;dbname=my_database
 
+Note that this works only for variables without ini [sections].
+
 Sequences
 ---------
 
@@ -219,6 +221,7 @@ myconfig.ini:
 Known Limitations
 =================
 
+* Variable expanding only works for unsectioned keys.
 * Empty strings, zeros and null are not properly treated yet.
 * Constructors with non-null default parameter values may not work properly yet.
 * The only way to use magic methods is to call them explicitly with __call
