@@ -12,7 +12,9 @@ foo = bar
 baz = bat
 INI;
         $c = new Container;
+        $this->assertFalse(isset($c->foo));
         $c->loadArray(parse_ini_string($ini, true));
+        $this->assertTrue(isset($c->foo));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }

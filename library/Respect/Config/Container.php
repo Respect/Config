@@ -21,6 +21,11 @@ class Container extends ArrayObject
             throw new InvalidArgumentException("Invalid input. Must be a valid file or array");
     }
 
+    public function __isset($name)
+    {
+        return parent::offsetExists($name);
+    }
+    
     public function getItem($name, $raw=false)
     {
         if (!isset($this[$name]))
