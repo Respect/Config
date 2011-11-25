@@ -1,4 +1,4 @@
-Respect\Config
+Respect\Config [![Build Status](https://secure.travis-ci.org/Respect/Validation.png)](http://travis-ci.org/Respect/Validation)
 ==============
 
 A powerful, small, deadly simple configurator and dependency injection container made to be easy. Featuring:
