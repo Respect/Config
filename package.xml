@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" packagerversion="1.9.4" version="2.0" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0     http://pear.php.net/dtd/tasks-1.0.xsd     http://pear.php.net/dtd/package-2.0     http://pear.php.net/dtd/package-2.0.xsd">
+  <name>Config</name>
+  <channel>respect.li/pear</channel>
+  <summary>A powerful, small, deadly simple configurator and dependency injection container made to be easy.</summary>
+  <description>A powerful, small, deadly simple configurator and dependency injection container made to be easy.</description>
+  <lead>
+    <name>Alexandre Gomes Gaigalas</name>
+    <user>alganet</user>
+    <email>alexandre@gaigalas.net</email>
+    <active>yes</active>
+  </lead>
+  <date>2011-11-25</date>
+  <time>20:35:22</time>
+  <version>
+    <release>0.2.2</release>
+    <api>0.2.2</api>
+  </version>
+  <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+  </stability>
+  <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+  <notes>-</notes>
+  <contents>
+    <dir name="library/Respect/Config" baseinstalldir="Respect/Config">
+      <file role="php" baseinstalldir="Respect/Config" install-as="/Container.php" name="library/Respect/Config/Container.php"/>
+      <file role="php" baseinstalldir="Respect/Config" install-as="/Instantiator.php" name="library/Respect/Config/Instantiator.php"/>
+    </dir>
+  </contents>
+  <dependencies>
+    <required>
+      <php>
+        <min>5.3</min>
+      </php>
+      <pearinstaller>
+        <min>1.4.0</min>
+      </pearinstaller>
+    </required>
+  </dependencies>
+  <phprelease/>
+  <changelog>
+    <release>
+      <version>
+        <release>0.2.0</release>
+        <api>0.2.0</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+    <release>
+      <version>
+        <release>0.2.1</release>
+        <api>0.2.1</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+    <release>
+      <version>
+        <release>0.2.2</release>
+        <api>0.2.2</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+  </changelog>
+</package>
