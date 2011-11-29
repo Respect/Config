@@ -1,4 +1,4 @@
-Respect\Config
+Respect\Config [![Build Status](https://secure.travis-ci.org/Respect/Config.png)](http://travis-ci.org/Respect/Config)
 ==============
 
 A powerful, small, deadly simple configurator and dependency injection container made to be easy. Featuring:
@@ -9,18 +9,9 @@ A powerful, small, deadly simple configurator and dependency injection container
 * Implements lazy loading for object instances.
 
 Installation
-============
+------------
 
-This is **almost** ready for production! We've tested, but it is a brand new project
-with few adopters yet. Feel completely free to contribute with any bug reports.
-
-1. PEAR Package
-
-   Instructions on [our PEAR Channel](http://respect.github.com/pear)
-
-2. Direct Download
-
-   Just click "Download" up there, in GitHub and use the library folder.
+Please use PEAR. More instructions on the [Respect PEAR channel](http://respect.li/pear)
 
 Autoloading
 -----------
