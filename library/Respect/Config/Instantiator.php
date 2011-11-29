@@ -117,8 +117,8 @@ class Instantiator
         if ($value instanceof self)
             $value = $value->getInstance();
         elseif (is_array($value))
-            foreach ($value as &$subValue)
-                $subValue = $this->processValue($subValue);
+            foreach ($value as $valueKey => $subValue) 
+                $value[$valueKey] = $this->processValue($subValue);
 
         return $value;
     }

@@ -1,6 +1,7 @@
 .buildpath
 .project
 .settings/
+.foundation-tmp
 tests/reports
 pirum
 nbproject
