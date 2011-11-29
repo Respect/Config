@@ -54,6 +54,11 @@ class Container extends ArrayObject
     {
         return $this->getItem($name);
     }
+    
+    public function __set($name, $value)
+    {
+        $this[$name] = $value;
+    }
 
     protected function keyHasInstantiator($key)
     {

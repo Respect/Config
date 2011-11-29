@@ -98,6 +98,15 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
         $s = $i1->getInstance();
         $this->assertEquals('stdClass', get_class($s->foo));
     }
+    
+    public function testMagickInvoke()
+    {
+        $i1 = new Instantiator('stdClass');
+        $i2 = new Instantiator('stdClass');
+        $i1->setParam('foo', $i2);
+        $s = $i1();
+        $this->assertEquals('stdClass', get_class($s->foo));
+    }
 
 }
 
