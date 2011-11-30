@@ -3,6 +3,8 @@
 .settings/
 .foundation-tmp
 tests/reports
+phar
+*.phar
 pirum
 nbproject
 *.7z
