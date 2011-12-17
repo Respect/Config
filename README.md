@@ -219,7 +219,7 @@ Known Limitations
 * Circular references haven't been tested and may not work
 * May not work properly with the following conditions:
     * Static and normal methods with the same names within the same class
-    * Methods and properties with same names wihin the same class
+    * Methods and properties with same names within the same class
     * Methods and properties with same names as constructor parameters
 
 Luckly, most of these limitations are known to be PHP bad practices. Keep up the
