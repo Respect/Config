@@ -38,8 +38,8 @@ dev-pyrus:
 	@echo "Installing Pyrus packages... (please run as root if needed)"
 	pyrus set auto_discover 1
 	-pyrus channel-discover respect.li/pear
-	pyrus install -f pear.phpunit.de/PHPUnit 
-	pyrus install -f pear.pirum-project.org/Pirum
+	pyrus install pear.phpunit.de/PHPUnit 
+	pyrus install pear.pirum-project.org/Pirum
 	pyrus install -f -o package.xml 
 
 patch:
