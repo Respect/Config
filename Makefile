@@ -37,9 +37,9 @@ dev:
 dev-pyrus: 
 	@echo "Installing Pyrus packages... (please run as root if needed)"
 	-pyrus channel-discover respect.li/pear
-	pyrus install --soft --force pear.phpunit.de/PHPUnit 
-	pyrus install --soft --force pear.pirum-project.org/Pirum
-	pyrus install --soft --force --alldeps -o package.xml 
+	pyrus install -f pear.phpunit.de/PHPUnit 
+	pyrus install -f pear.pirum-project.org/Pirum
+	pyrus install -f -o package.xml 
 
 patch:
 	@echo "Generating package.xml patch version"
