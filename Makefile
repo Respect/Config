@@ -36,8 +36,6 @@ dev:
 
 dev-pyrus: 
 	@echo "Installing Pyrus packages... (please run as root if needed)"
-	pyrus upgrade
-	pyrus config-set auto_discover 1
 	-pyrus channel-discover respect.li/pear
 	pyrus install --soft --force pear.phpunit.de/PHPUnit 
 	pyrus install --soft --force pear.pirum-project.org/Pirum
