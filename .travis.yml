@@ -6,6 +6,6 @@ php:
   - 5.4
 
 before_script:
-  - "alias pear='pyrus'"
+  - "alias pear=pyrus"
   - "sudo make dev"
   - "phpenv rehash" 
