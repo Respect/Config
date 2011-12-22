@@ -58,11 +58,12 @@ class Instantiator
                         $this->cleanupParams($this->constructor)
                 );
 
-        foreach ($this->methodCalls as $methodCalls)
-            $this->performMethodCalls($instance, $methodCalls);
-
         foreach ($this->propertySetters as $property => $value)
             $instance->{$property} = $value;
+            
+        foreach ($this->methodCalls as $methodCalls)
+            $this->performMethodCalls($instance, $methodCalls);
+            
 
         return $instance;
     }

@@ -43,7 +43,18 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
     }
-
+    
+    public function testMethodWithObjectProperty()
+    {
+        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
+        $i->setParam('myProperty', 'bar');
+        $i->setParam('usingProperty', array(
+            array()
+        ));
+        $testObject = $i->getInstance();
+        $this->assertTrue($testObject->myPropertyUsed);
+    }
+    
     public function testMethodSingleParam()
     {
         $i = new Instantiator(__NAMESPACE__ . '\\testClass');
@@ -114,11 +125,19 @@ class testClass
 {
 
     public $ok = false;
+    public $myPropertyUsed = false;
+    public $myProperty = 'foo';
 
     public function __construct($foo=null, $bar=null, $baz=null)
     {
         if ($foo)
             $this->ok = true;
+    }
+    
+    public function usingProperty()
+    {
+        if ($this->myProperty == 'bar')
+            $this->myPropertyUsed = true;
     }
 
     public function noParams()
