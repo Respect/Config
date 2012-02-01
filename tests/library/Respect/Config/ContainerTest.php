@@ -99,12 +99,15 @@ INI;
     {
         $ini = <<<INI
 foo = E_USER_ERROR
+faa = [E_USER_ERROR, E_USER_WARNING]
 bar = PDO::ATTR_ERRMODE
+bor = [PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION]
 INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertEquals(E_USER_ERROR, $c->foo);
-        $this->assertEquals(\PDO::ATTR_ERRMODE, $c->bar);
+        $this->assertEquals(array(E_USER_ERROR, E_USER_WARNING), $c->faa);
+        $this->assertEquals(array(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION), $c->bor);
     }
 
     public function testInstantiatorParams()
