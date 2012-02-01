@@ -38,25 +38,29 @@ class Instantiator
         if ($this->instance && !$forceNew)
             return $this->instance;
 
-        $className = $this->className;
-        $instance = $this->instance;
-
+        $className     = $this->className;
+        $instance      = $this->instance;
+        $staticMethods = count($this->staticMethodCalls);
         foreach ($this->staticMethodCalls as $methodCalls) {
             $this->performMethodCalls($className, $methodCalls,
-                function($result) use ($className, &$instance) {
-                    if ($result instanceof $className)
+                function($result) use ($className, &$instance, $staticMethods) {
+                    if ( $result instanceof $className ||
+                        ($staticMethods == 1 && is_object($result)) )
                         $instance = $result;
                 }
             );
         }
 
+        $constructor     = $this->reflection->getConstructor();
+        $hasConstructor  = ($constructor) ? $constructor->isPublic() : false ;
         if (empty($instance))
-            if (empty($this->constructor))
+            if (empty($this->constructor) && $hasConstructor) {
                 $instance = new $className;
-            else
-                $instance = $this->reflection->newInstanceArgs(
-                        $this->cleanupParams($this->constructor)
-                );
+            } else {
+                $params   = $this->cleanupParams($this->constructor);
+                $instance = $this->reflection->newInstanceArgs($params);
+            }
+        $this->instance = $instance;
 
         foreach ($this->propertySetters as $property => $value)
             $instance->{$property} = $value;
