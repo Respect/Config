@@ -102,12 +102,16 @@ foo = E_USER_ERROR
 faa = [E_USER_ERROR, E_USER_WARNING]
 bar = PDO::ATTR_ERRMODE
 bor = [PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION]
+zed = DIRECTORY_SEPARATOR'usr'
+zod = [DIRECTORY_SEPARATOR'usr', DIRECTORY_SEPARATOR'var']
 INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertEquals(E_USER_ERROR, $c->foo);
         $this->assertEquals(array(E_USER_ERROR, E_USER_WARNING), $c->faa);
         $this->assertEquals(array(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION), $c->bor);
+        $this->assertEquals(DIRECTORY_SEPARATOR.'usr', $c->zed);
+        $this->assertEquals(array(DIRECTORY_SEPARATOR.'usr', DIRECTORY_SEPARATOR.'var'), $c->zod);
     }
 
     public function testInstantiatorParams()
