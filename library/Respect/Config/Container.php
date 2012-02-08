@@ -100,7 +100,7 @@ class Container extends ArrayObject
     {
         $key = $this->removeDuplicatedSpaces($key);
         list($keyName, $keyClass) = explode(' ', $key);
-        $instantiator = new Instantiator($keyClass, $this);
+        $instantiator = new Instantiator($keyClass);
 
         if (is_array($value))
             foreach ($value as $property => $pValue)

@@ -16,9 +16,8 @@ class Instantiator
     protected $methodCalls = array();
     protected $propertySetters = array();
 
-    public function __construct($className, Container $container = null)
+    public function __construct($className)
     {
-        $this->container = $container;
         $this->reflection = new ReflectionClass($className);
         $this->constructor = $this->findConstructorParams($this->reflection);
         $this->className = $className;
