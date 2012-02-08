@@ -16,8 +16,9 @@ class Instantiator
     protected $methodCalls = array();
     protected $propertySetters = array();
 
-    public function __construct($className)
+    public function __construct($className, Container $container = null)
     {
+        $this->container = $container;
         $this->reflection = new ReflectionClass($className);
         $this->constructor = $this->findConstructorParams($this->reflection);
         $this->className = $className;
@@ -44,8 +45,7 @@ class Instantiator
         foreach ($this->staticMethodCalls as $methodCalls) {
             $this->performMethodCalls($className, $methodCalls,
                 function($result) use ($className, &$instance, $staticMethods) {
-                    if ( $result instanceof $className ||
-                        ($staticMethods == 1 && is_object($result)) )
+                    if ($result instanceof $className || ($staticMethods == 1 && is_object($result)))
                         $instance = $result;
                 }
             );
@@ -54,16 +54,16 @@ class Instantiator
         $constructor     = $this->reflection->getConstructor();
         $hasConstructor  = ($constructor) ? $constructor->isPublic() : false ;
         if (empty($instance))
-            if (empty($this->constructor) && $hasConstructor) {
+            if (empty($this->constructor) && $hasConstructor) 
                 $instance = new $className;
-            } else {
-                $params   = $this->cleanupParams($this->constructor);
-                $instance = $this->reflection->newInstanceArgs($params);
-            }
+             else 
+                $instance = $this->reflection->newInstanceArgs(
+                    $this->cleanupParams($this->constructor)
+                );
         $this->instance = $instance;
 
         foreach ($this->propertySetters as $property => $value)
-            $instance->{$property} = $value;
+            $instance->{$property} = $this->lazyLoad($value);
             
         foreach ($this->methodCalls as $methodCalls)
             $this->performMethodCalls($instance, $methodCalls);
@@ -99,7 +99,16 @@ class Instantiator
     {
         while (null === end($params))
             unset($params[key($params)]);
+
+        foreach ($params as &$p)
+            $p = $this->lazyLoad($p);
+
         return $params;
+    }
+
+    protected function lazyLoad($value)
+    {
+        return $value instanceof self ? $value->getInstance() : $value;
     }
 
     protected function findConstructorParams(ReflectionClass $class)
@@ -119,9 +128,7 @@ class Instantiator
 
     protected function processValue($value)
     {
-        if ($value instanceof self)
-            $value = $value->getInstance();
-        elseif (is_array($value))
+        if (is_array($value))
             foreach ($value as $valueKey => $subValue) 
                 $value[$valueKey] = $this->processValue($subValue);
 
@@ -153,50 +160,18 @@ class Instantiator
     protected function performMethodCalls($class, array $methodCalls, $resultCallback=null)
     {
         list($methodName, $calls) = $methodCalls;
-        foreach ($calls as $arguments) {
+        $resultCallback = $resultCallback ?: function(){};
+
+        foreach ($calls as $arguments) 
             if (is_array($arguments))
-                $result = call_user_func_array(array($class, $methodName),
-                        $this->cleanUpParams($arguments));
+                $resultCallback(call_user_func_array(
+                    array($class, $methodName),
+                    $this->cleanUpParams($arguments)
+                ));
             elseif (!is_null($arguments))
-                $result = call_user_func(array($class, $methodName), $arguments);
+                $resultCallback(call_user_func(array($class, $methodName), $this->lazyLoad($arguments)));
             else
-                $result = call_user_func(array($class, $methodName));
-            if ($resultCallback)
-                $resultCallback($result);
-        }
+                $resultCallback(call_user_func(array($class, $methodName)));
     }
 
 }
-
-/**
- * LICENSE
- *
- * Copyright (c) 2009-2011, Alexandre Gomes Gaigalas.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright notice,
- *       this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above copyright notice,
- *       this list of conditions and the following disclaimer in the documentation
- *       and/or other materials provided with the distribution.
- *
- *     * Neither the name of Alexandre Gomes Gaigalas nor the names of its
- *       contributors may be used to endorse or promote products derived from this
- *       software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */

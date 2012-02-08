@@ -218,4 +218,28 @@ INI;
         $this->assertEquals('ok', $c->getItem('foo', false));
     }
 
+    public function testLazyLoadinessOnMultipleConfigLevels()
+    {
+        $GLOBALS['_SHIT_'] = false;
+        $ini = <<<INI
+[foo Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
+child = ""
+[bar Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
+child = [foo]
+[baz Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
+child = [bar]
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertFalse($GLOBALS['_SHIT_']);
+        $GLOBALS['_SHIT_'] = false; 
+    }
+
+}
+
+class WheneverIBornIPopulateAGlobalCalled_SHIT_
+{
+    public function __construct(){
+        $GLOBALS['_SHIT_'] = true;
+    }
 }
