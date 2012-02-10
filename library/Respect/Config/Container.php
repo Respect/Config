@@ -44,7 +44,7 @@ class Container extends ArrayObject
     
     public function loadString($configurator)
     {
-        $iniData = parse_ini_string($configurator);
+        $iniData = parse_ini_string($configurator, true);
         if (false === $iniData || count($iniData) == 0)
             throw new Argument("Invalid configuration string");
         
