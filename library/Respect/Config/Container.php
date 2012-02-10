@@ -2,8 +2,8 @@
 
 namespace Respect\Config;
 
-use UnexpectedValueException;
-use InvalidArgumentException;
+use UnexpectedValueException as Value;
+use InvalidArgumentException as Argument;
 use ArrayObject;
 
 class Container extends ArrayObject
@@ -13,12 +13,17 @@ class Container extends ArrayObject
     {
         if (is_null($configurator))
             return;
-        elseif (is_array($configurator))
-            $this->loadArray($configurator);
-        elseif (file_exists($configurator) && is_file($configurator))
-            $this->loadFile($configurator);
-        else
-            throw new InvalidArgumentException("Invalid input. Must be a valid file or array");
+            
+        if (is_array($configurator))
+            return $this->loadArray($configurator);
+            
+        if (file_exists($configurator) && is_file($configurator))
+            return $this->loadFile($configurator);
+            
+        if (is_string($configurator))
+            return $this->loadString($configurator);
+            
+        throw new Argument("Invalid input. Must be a valid file or array");
     }
 
     public function __isset($name)
@@ -29,18 +34,29 @@ class Container extends ArrayObject
     public function getItem($name, $raw=false)
     {
         if (!isset($this[$name]))
-            throw new InvalidArgumentException("Item $name not found");
-        elseif ($raw || !is_callable($this[$name]))
+            throw new Argument("Item $name not found");
+            
+        if ($raw || !is_callable($this[$name]))
             return $this[$name];
-        else
-            return $this->lazyLoad($name);
+
+        return $this->lazyLoad($name);
+    }
+    
+    public function loadString($configurator)
+    {
+        $iniData = parse_ini_string($configurator);
+        if (false === $iniData || count($iniData) == 0)
+            throw new Argument("Invalid configuration string");
+        
+        return $this->loadArray($iniData);
     }
 
     public function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
         if (false === $iniData)
-            throw new InvalidArgumentException("Invalid configuration INI file");
+            throw new Argument("Invalid configuration INI file");
+        
         return $this->loadArray($iniData);
     }
 
