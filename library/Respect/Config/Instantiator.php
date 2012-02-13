@@ -76,6 +76,11 @@ class Instantiator
         return $this->params[$name];
     }
 
+    public function setInstance($instance)
+    {
+        $this->instance = $instance;
+    }
+
     public function setParam($name, $value)
     {
         $value = $this->processValue($value);
