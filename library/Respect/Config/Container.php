@@ -73,6 +73,8 @@ class Container extends ArrayObject
     
     public function __set($name, $value)
     {
+        if (isset($this[$name]) && $this[$name] instanceof Instantiator)
+            $this[$name]->setInstance($value);
         $this[$name] = $value;
     }
 

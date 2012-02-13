@@ -235,11 +235,35 @@ INI;
         $GLOBALS['_SHIT_'] = false; 
     }
 
+
+    public function testPascutti()
+    {
+        $GLOBALS['_SHIT_'] = false;
+        $ini = <<<INI
+[pdo StdClass]
+
+[db Respect\Config\DatabaseWow]
+con = [pdo];
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $c->pdo = new \PDO('sqlite::memory:');
+        $this->assertSame($c->pdo, $c->db->c);
+    }
+
 }
 
 class WheneverIBornIPopulateAGlobalCalled_SHIT_
 {
     public function __construct(){
         $GLOBALS['_SHIT_'] = true;
+    }
+}
+
+
+class DatabaseWow {
+    public $c;
+    public function __construct($con) {
+        $this->c = $con;
     }
 }
