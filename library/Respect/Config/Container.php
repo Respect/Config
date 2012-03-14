@@ -55,7 +55,7 @@ class Container extends ArrayObject
     }
 
     public function loadFileMultiple(array $configurators)
-            
+    {    
         return $this->loadStringMultiple(
             array_map('file_get_contents', 
                 array_filter($configurators, 'is_file')
