@@ -17,8 +17,11 @@ class Container extends ArrayObject
         if (is_array($configurator))
             return $this->loadArray($configurator);
             
-        if (file_exists($configurator) && is_file($configurator))
-            return $this->loadFile($configurator);
+        if (file_exists($configurator))
+            if (is_file($configurator))
+                return $this->loadFile($configurator);
+            elseif (is_dir($configurator))
+                return $this->loadFileMultiple(scandir($configurator));
             
         if (is_string($configurator))
             return $this->loadString($configurator);
@@ -49,6 +52,15 @@ class Container extends ArrayObject
             throw new Argument("Invalid configuration string");
         
         return $this->loadArray($iniData);
+    }
+
+    public function loadFileMultiple(array $configurators)
+            
+        return $this->loadStringMultiple(
+            array_map('file_get_contents', 
+                array_filter($configurators, 'is_file')
+            )
+        );
     }
 
     public function loadStringMultiple(array $configurators) 
