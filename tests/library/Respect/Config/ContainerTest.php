@@ -11,7 +11,7 @@ function is_file($name) { //override for testing
 }
 
 function parse_ini_file() { //override for testing
-        return array('foo'=>'bar', 'baz'=>'bat');
+    return array('foo'=>'bar', 'baz'=>'bat');
 }
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
@@ -249,6 +249,21 @@ INI;
         $c->loadArray(parse_ini_string($ini, true));
         $c->pdo = new \PDO('sqlite::memory:');
         $this->assertSame($c->pdo, $c->db->c);
+    }
+    public function testDependencies()
+    {
+        $ini1 = <<<INI
+[bar stdClass]
+value = bar
+INI;
+        $ini2 = <<<INI
+[foo stdClass]
+bar = [bar]
+value = foo
+INI;
+        $c = new Container;
+        $c->loadStringMultiple(array($ini1, $ini2));
+        $this->assertEquals('bar', $c->foo->bar->value);
     }
 
 }

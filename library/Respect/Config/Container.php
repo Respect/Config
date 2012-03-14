@@ -51,6 +51,17 @@ class Container extends ArrayObject
         return $this->loadArray($iniData);
     }
 
+    public function loadStringMultiple(array $configurators) 
+    {
+        usort($configurators, function($a, $b) {
+            preg_match_all('#\[[^] ]+\]#', $a, $usedSectionsA);
+            preg_match_all('#\[[^] ]+\]#', $b, $usedSectionsB);
+            return count($usedSectionsA[0]) > count($usedSectionsB[0]);
+        });
+        foreach ($configurators as $c)
+            $this->loadString($c);
+    }
+
     public function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
