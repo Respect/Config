@@ -65,10 +65,27 @@ class Container extends ArrayObject
 
     public function loadStringMultiple(array $configurators) 
     {
-        usort($configurators, function($a, $b) {
-            preg_match_all('#\[[^] ]+\]#', $a, $usedSectionsA);
-            preg_match_all('#\[[^] ]+\]#', $b, $usedSectionsB);
-            return count($usedSectionsA[0]) > count($usedSectionsB[0]);
+        uasort($configurators, function($first, $second) {
+            preg_match_all('#\[([^] ]+)\]#', $first, $usedOnFirst);
+            preg_match_all('#\[([^] ]+)\]#', $second, $usedOnSecond);
+            preg_match_all('#\[([^]]+) [^]]+\]#', $first, $declaredOnFirst);
+            preg_match_all('#\[([^]]+) [^]]+\]#', $second, $declaredOnSecond);
+            
+            $usedOnFirst = array_unique($usedOnFirst[1]);
+            $usedOnSecond = array_unique($usedOnSecond[1]);
+            $declaredOnFirst = array_unique($declaredOnFirst[1]);
+            $declaredOnSecond = array_unique($declaredOnSecond[1]);
+
+            $usedByFirstDeclaredBySecond = array_intersect($usedOnFirst, $declaredOnSecond);
+            $usedBySecondDeclaredByFirst = array_intersect($usedOnSecond, $declaredOnFirst);
+
+            $usagesFirst = count($usedByFirstDeclaredBySecond);
+            $usagesSecond = count($usedBySecondDeclaredByFirst);
+
+            if ($usagesFirst == $usagesSecond)
+                return 0;
+            else
+                return $usagesFirst < $usagesSecond ? -1 : 1;
         });
         foreach ($configurators as $c)
             $this->loadString($c);

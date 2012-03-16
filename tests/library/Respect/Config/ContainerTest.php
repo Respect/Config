@@ -264,6 +264,37 @@ INI;
         $c = new Container;
         $c->loadStringMultiple(array($ini1, $ini2));
         $this->assertEquals('bar', $c->foo->bar->value);
+        $c = new Container;
+        $c->loadStringMultiple(array($ini2, $ini1));
+        $this->assertEquals('bar', $c->foo->bar->value);
+    }
+    public function testDependenciesDeep()
+    {
+        $ini1 = <<<INI
+[bar stdClass]
+value = bar
+[bat stdClass]
+value = bat
+INI;
+        $ini2 = <<<INI
+[foo stdClass]
+bar = [bar]
+value = foo
+value2 = [bar]
+INI;
+        $ini3 = <<<INI
+[deep stdClass]
+value1 = [foo]
+INI;
+        $c = new Container;
+        $c->loadStringMultiple(array($ini1, $ini2, $ini3));
+        $this->assertEquals('bar', $c->foo->bar->value);
+        $this->assertEquals('foo', $c->deep->value1->value);
+        $c = new Container;
+        $c->loadStringMultiple(array($ini2, $ini3, $ini1));
+        $this->assertEquals('bar', $c->foo->bar->value);
+        $this->assertEquals('foo', $c->deep->value1->value);
+        $c = new Container;
     }
 
 }
