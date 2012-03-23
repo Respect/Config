@@ -235,6 +235,17 @@ INI;
         $GLOBALS['_SHIT_'] = false; 
     }
 
+    public function testSequencesConstructingLazy()
+    {
+        $ini = <<<INI
+[bar Respect\Config\Bar]
+[foo Respect\Config\Foo]
+hello[] = ["opa", [bar]]
+INI;
+        $c = new Container();
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertInstanceOf('Respect\Config\Bar', $c->foo->bar);
+    }
 
     public function testPascutti()
     {
@@ -297,6 +308,13 @@ INI;
         $c = new Container;
     }
 
+}
+class Bar {}
+class Foo 
+{
+    function hello($some, Bar $bar) {
+        $this->bar = $bar;
+    }
 }
 
 class WheneverIBornIPopulateAGlobalCalled_SHIT_
