@@ -53,7 +53,7 @@ class Instantiator
         $constructor     = $this->reflection->getConstructor();
         $hasConstructor  = ($constructor) ? $constructor->isPublic() : false ;
         if (empty($instance))
-            if (empty($this->constructor) && !$hasConstructor)
+            if (empty($this->constructor) || !$hasConstructor)
                 $instance = new $className;
              else 
                 $instance = $this->reflection->newInstanceArgs(
