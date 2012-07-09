@@ -36,7 +36,8 @@ class Container extends ArrayObject
 
     public function __call($name, $dict)
     {
-        return $this->__invoke($dict)->name;
+        $this->__invoke($dict[0]);
+        return $this->getItem($name);
     }
 
     public function configure()

@@ -318,6 +318,16 @@ INI;
         $result = $c(array('undef'=>'Hello'));
         $this->assertEquals('Hello', $result->bar);
     }
+    public function testLockedContainer2()
+    {
+        $ini = <<<INI
+foo = [undef]
+bar = [foo]
+INI;
+        $c = new Container(parse_ini_string($ini, true));
+        $result = $c->bar(array('undef'=>'Hello'));
+        $this->assertEquals('Hello', $result);
+    }
 
 }
 class Bar {}
