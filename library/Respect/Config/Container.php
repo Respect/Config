@@ -8,9 +8,37 @@ use ArrayObject;
 
 class Container extends ArrayObject
 {
+    protected $configurator;
 
     public function __construct($configurator=null)
     {
+        $this->configurator = $configurator;
+    }
+
+    public function __isset($name)
+    {
+        if ($this->configurator)
+            $this->configure();
+
+        return parent::offsetExists($name);
+    }
+
+    public function __invoke(array $dict)
+    {
+        foreach ($dict as $name => $item)
+            parent::offsetSet($name, $item);
+
+        if ($this->configurator)
+            $this->configure();
+
+        return $this;
+    }
+
+    public function configure()
+    {
+        $configurator = $this->configurator;
+        $this->configurator = null;
+
         if (is_null($configurator))
             return;
             
@@ -25,17 +53,16 @@ class Container extends ArrayObject
             
         if (is_string($configurator))
             return $this->loadString($configurator);
-            
-        throw new Argument("Invalid input. Must be a valid file or array");
-    }
 
-    public function __isset($name)
-    {
-        return parent::offsetExists($name);
+        $this->configurator = $configurator;
+        throw new Argument("Invalid input. Must be a valid file or array");
     }
     
     public function getItem($name, $raw=false)
     {
+        if ($this->configurator)
+            $this->configure();
+
         if (!isset($this[$name]))
             throw new Argument("Item $name not found");
             

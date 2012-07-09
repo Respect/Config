@@ -40,6 +40,7 @@ INI;
     {
         $this->setExpectedException('InvalidArgumentException');
         $c = new Container('inexistent.ini');
+        $c->foo;
     }
 
     public function testLoadArraySections()
@@ -306,6 +307,16 @@ INI;
         $this->assertEquals('bar', $c->foo->bar->value);
         $this->assertEquals('foo', $c->deep->value1->value);
         $c = new Container;
+    }
+    public function testLockedContainer()
+    {
+        $ini = <<<INI
+foo = [undef]
+bar = [foo]
+INI;
+        $c = new Container(parse_ini_string($ini, true));
+        $result = $c(array('undef'=>'Hello'));
+        $this->assertEquals('Hello', $result->bar);
     }
 
 }
