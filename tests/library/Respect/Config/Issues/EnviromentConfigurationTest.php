@@ -20,7 +20,7 @@ account = [user]
         $expected = 'respect';
         $ENVIRONMENT = 'production';
         $config  = parse_ini_string($config,true);
-        $config += $config[$ENVIRONMENT];
+        $config  = array_merge($config[$ENVIRONMENT], $config);
         $container = new Container($config);
         $this->assertEquals($expected, $container->account); //respect
 	}
