@@ -20,6 +20,7 @@ conjecture = [[foo]]
 	 */
 	public function testConjecture25()
 	{
+        $this->markTestSkipped();
         $expected = 'bar';
         $config  = parse_ini_string($this->config,true);
         $container = new Container($config);
@@ -33,5 +34,4 @@ conjecture = [[foo]]
         $container = new Container($config);
         $this->assertEquals($expected, $container->conjecture);
     }
-
 }
