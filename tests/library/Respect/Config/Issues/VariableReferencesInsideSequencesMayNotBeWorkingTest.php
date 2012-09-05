@@ -34,4 +34,19 @@ conjecture = [[foo]]
         $container = new Container($config);
         $this->assertEquals($expected, $container->conjecture);
     }
+    public function testFixNested3LevelVariable()
+    {
+		$config = "
+bar = 'foobar';
+foo = 'bar';
+foobar = 'foobar'
+conjecture = [[[foo]]] 
+";
+
+
+        $expected = 'foobar';
+        $config  = parse_ini_string($config,true);
+        $container = new Container($config);
+        $this->assertEquals($expected, $container->conjecture);
+    }
 }
