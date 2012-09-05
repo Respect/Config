@@ -209,7 +209,13 @@ class Container extends ArrayObject
         elseif (empty($value))
             return null;
         else
-            return $this->parseSingleValue($value);
+        {
+            $parsed = $this->parseSingleValue($value);
+            while(is_string($parsed) && $this->hasCompleteBrackets($parsed)) {
+                $parsed = $this->parseValue($parsed);
+            }
+            return $parsed;
+        }
     }
 
     protected function hasCompleteBrackets($value)
