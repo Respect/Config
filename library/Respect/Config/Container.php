@@ -176,7 +176,13 @@ class Container extends ArrayObject
         elseif (empty($value))
             return null;
         else
-            return $this->parseSingleValue($value);
+        {
+            $parsed = $this->parseSingleValue($value);
+            while(is_string($parsed) && $this->hasCompleteBrackets($parsed)) {
+                $parsed = $this->parseValue($parsed);
+            }
+            return $parsed;
+        }
     }
 
     protected function hasCompleteBrackets($value)
@@ -219,13 +225,8 @@ class Container extends ArrayObject
             return $this->parseArgumentList($value);
         elseif ($this->matchReference($value))
             return $this->getItem($value, true);
-        else{
-            $parsed= $this->parseVariables($value);
-            if ($this->hasCompleteBrackets($parsed)){
-                return $this->parseBrackets($parsed);
-            }
-            return $parsed;
-            }
+        else
+            return $this->parseVariables($value);
     }
 
     protected function parseVariables($value)
