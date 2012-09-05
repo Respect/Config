@@ -219,8 +219,13 @@ class Container extends ArrayObject
             return $this->parseArgumentList($value);
         elseif ($this->matchReference($value))
             return $this->getItem($value, true);
-        else
-            return $this->parseVariables($value);
+        else{
+            $parsed= $this->parseVariables($value);
+            if ($this->hasCompleteBrackets($parsed)){
+                return $this->parseBrackets($parsed);
+            }
+            return $parsed;
+            }
     }
 
     protected function parseVariables($value)
