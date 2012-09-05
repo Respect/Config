@@ -3,6 +3,16 @@ namespace Respect\Config;
 
 class VariableReferencesInsideSequencesMayNotBeWorkingTestTest extends \PHPUnit_Framework_TestCase
 {
+    private $config;
+    public function setUp()
+    {
+		$this->config = "
+bar = 'bar';
+foo = 'bar';
+conjecture = [[foo]] 
+";
+    }
+
 
     /**
 	 * @group 	issues
@@ -10,16 +20,18 @@ class VariableReferencesInsideSequencesMayNotBeWorkingTestTest extends \PHPUnit_
 	 */
 	public function testConjecture25()
 	{
-		$config = "
-bar = 'bar';
-foo = 'bar';
-conjecture = [[foo]] 
-";
         $expected = 'bar';
-        $config  = parse_ini_string($config,true);
+        $config  = parse_ini_string($this->config,true);
         $container = new Container($config);
         $this->assertNotEquals($expected, $container->conjecture);
 	}
 
+    public function testFixNestedVariable()
+    {
+        $expected = 'bar';
+        $config  = parse_ini_string($this->config,true);
+        $container = new Container($config);
+        $this->assertEquals($expected, $container->conjecture);
+    }
 
 }
