@@ -5,6 +5,8 @@ namespace Respect\Config;
 use UnexpectedValueException as Value;
 use InvalidArgumentException as Argument;
 use ArrayObject;
+use ReflectionMethod;
+use ReflectionFunction;
 
 class Container extends ArrayObject
 {
@@ -23,9 +25,28 @@ class Container extends ArrayObject
         return parent::offsetExists($name);
     }
 
-    public function __invoke(array $dict)
+    public function __invoke($spec)
     {
-        foreach ($dict as $name => $item)
+        if (is_callable($spec)) {
+            if (is_array($spec)) {
+                list($class, $method) = $spec;
+                $mirror = new ReflectionMethod($class, $method);
+            } else {
+                $mirror = new ReflectionFunction($spec);
+            }
+            $arguments = array_map(
+                function ($param) {
+                    if ($paramClass = $param->getClass()) {
+                        $paramClassName = $paramClass->getName();
+                        return $this->getItem($paramClassName);
+                    }
+                },
+                $mirror->getParameters()
+            );
+            return $mirror->invokeArgs($arguments);
+        }
+
+        foreach ($spec as $name => $item)
             parent::offsetSet($name, $item);
 
         if ($this->configurator)
@@ -190,7 +211,10 @@ class Container extends ArrayObject
     protected function parseInstantiator($key, $value)
     {
         $key = $this->removeDuplicatedSpaces($key);
-        list($keyName, $keyClass) = explode(' ', $key);
+        list($keyName, $keyClass) = explode(' ', $key, 2);
+        if ('instanceof' === $keyName) {
+            $keyName = $keyClass;
+        }
         $instantiator = new Instantiator($keyClass);
 
         if (is_array($value))
@@ -276,7 +300,11 @@ class Container extends ArrayObject
     protected function lazyLoad($name)
     {
         $callback = $this[$name];
-        return $this[$name] = $callback();
+        if ($callback instanceof Instantiator && $callback->getMode() != Instantiator::MODE_FACTORY) {
+            return $this[$name] = $callback();
+        } 
+
+        return $callback();
     }
 
 }

@@ -6,6 +6,8 @@ use ReflectionClass;
 
 class Instantiator
 {
+    const MODE_DEPENDENCY = false;
+    const MODE_FACTORY = 'new';
 
     protected $instance;
     protected $reflection;
@@ -15,12 +17,22 @@ class Instantiator
     protected $staticMethodCalls = array();
     protected $methodCalls = array();
     protected $propertySetters = array();
+    protected $mode = self::MODE_DEPENDENCY;
 
     public function __construct($className)
     {
+        if (false !== stripos($className, ' ')) {
+            list($mode, $className) = explode(' ', $className, 2);
+            $this->mode = $mode;
+        }
         $this->reflection = new ReflectionClass($className);
         $this->constructor = $this->findConstructorParams($this->reflection);
         $this->className = $className;
+    }
+
+    public function getMode()
+    {
+        return $this->mode;
     }
 
     public function __invoke()
@@ -35,11 +47,13 @@ class Instantiator
 
     public function getInstance($forceNew=false)
     {
+        if ($this->mode == static::MODE_FACTORY) 
+            $this->instance = null;
+        
         if ($this->instance && !$forceNew)
             return $this->instance;
 
         $className     = $this->className;
-        $instance      = $this->instance;
         $staticMethods = count($this->staticMethodCalls);
         foreach ($this->staticMethodCalls as $methodCalls) {
             $this->performMethodCalls($className, $methodCalls,
@@ -59,7 +73,6 @@ class Instantiator
                 $instance = $this->reflection->newInstanceArgs(
                     $this->cleanupParams($this->constructor)
                 );
-        $this->instance = $instance;
 
         foreach ($this->propertySetters as $property => $value)
             $instance->{$property} = $this->lazyLoad($value);
@@ -67,8 +80,7 @@ class Instantiator
         foreach ($this->methodCalls as $methodCalls)
             $this->performMethodCalls($instance, $methodCalls);
             
-
-        return $instance;
+        return $this->instance = $instance;
     }
 
     public function getParam($name)

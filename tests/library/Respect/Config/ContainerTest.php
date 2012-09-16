@@ -328,6 +328,45 @@ INI;
         $result = $c->bar(array('undef'=>'Hello'));
         $this->assertEquals('Hello', $result);
     }
+    public function testFactory()
+    {
+        $ini = <<<INI
+[now new DateTime]
+time = now
+INI;
+        $c = new Container(parse_ini_string($ini, true));
+        $result = $c->now;
+        $result2 = $c->now;
+        $this->assertNotSame($result, $result2);
+    }
+    public function testDependenciesDoesNotAffectFactories()
+    {
+        $ini = <<<INI
+[now DateTime]
+time = now
+INI;
+        $c = new Container(parse_ini_string($ini, true));
+        $result = $c->now;
+        $result2 = $c->now;
+        $this->assertSame($result, $result2);
+    }
+    public function testByInstanceCallback()
+    {
+        $ini = <<<INI
+[instanceof DateTime]
+time = now
+INI;
+        $c = new Container(parse_ini_string($ini, true));
+        $called = false;
+        $result = $c(function(\DateTime $date) use (&$called) {
+            $called = true;
+            return $date;
+        });
+        $result2 = $c['DateTime'];
+        $this->assertInstanceOf('DateTime', $result);
+        $this->assertInstanceOf('DateTime', $result2);
+        $this->assertTrue($called);
+    }
 
 }
 class Bar {}
