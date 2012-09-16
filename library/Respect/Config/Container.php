@@ -34,11 +34,12 @@ class Container extends ArrayObject
             } else {
                 $mirror = new ReflectionFunction($spec);
             }
+            $container = $this;
             $arguments = array_map(
-                function ($param) {
+                function ($param) use ($container) {
                     if ($paramClass = $param->getClass()) {
                         $paramClassName = $paramClass->getName();
-                        return $this->getItem($paramClassName);
+                        return $container->getItem($paramClassName);
                     }
                 },
                 $mirror->getParameters()
