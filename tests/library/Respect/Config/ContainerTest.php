@@ -367,6 +367,20 @@ INI;
         $this->assertInstanceOf('DateTime', $result2);
         $this->assertTrue($called);
     }
+    public function testByInstanceCallback2()
+    {
+        $c = new Container();
+        $c(new \DateTime);
+        $called = false;
+        $result = $c(function(\DateTime $date) use (&$called) {
+            $called = true;
+            return $date;
+        });
+        $result2 = $c['DateTime'];
+        $this->assertInstanceOf('DateTime', $result);
+        $this->assertInstanceOf('DateTime', $result2);
+        $this->assertTrue($called);
+    }
 
 }
 class Bar {}

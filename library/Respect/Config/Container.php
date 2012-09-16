@@ -45,6 +45,11 @@ class Container extends ArrayObject
             );
             return $mirror->invokeArgs($arguments);
         }
+        if ((bool) array_filter(func_get_args(), 'is_object')) {
+            foreach (func_get_args() as $dependency) {
+                $this[get_class($dependency)] = $dependency;
+            }
+        }
 
         foreach ($spec as $name => $item)
             parent::offsetSet($name, $item);
