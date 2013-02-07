@@ -160,6 +160,13 @@ class Container extends ArrayObject
         return $this->loadArray($iniData);
     }
 
+    private function state()
+    {
+        return array_filter($this->getArrayCopy(), function ($v) {
+            return !is_object($v) || get_class($v) != __NAMESPACE__.'\\Instantiator';
+        });
+    }
+
     public function loadArray(array $configurator)
     {
         foreach ($configurator as $key => $value)
