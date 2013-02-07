@@ -185,6 +185,11 @@ class Container extends ArrayObject
         $this[$name] = $value;
     }
 
+    protected function keyHasStateInstance($key, &$k)
+    {
+        return $this->offsetExists($k = current((explode(' ', $key))));
+    }
+
     protected function keyHasInstantiator($key)
     {
         return false !== stripos($key, ' ');
@@ -194,7 +199,10 @@ class Container extends ArrayObject
     {
         $key = trim($key);
         if ($this->keyHasInstantiator($key))
-            $this->parseInstantiator($key, $value);
+            if ($this->keyHasStateInstance($key, $k))
+                $this->offsetSet($key,  $this[$k]);
+            else
+                $this->parseInstantiator($key, $value);
         else
             $this->parseStandardItem($key, $value);
     }
