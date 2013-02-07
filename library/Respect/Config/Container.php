@@ -169,7 +169,7 @@ class Container extends ArrayObject
 
     public function loadArray(array $configurator)
     {
-        foreach ($configurator as $key => $value)
+        foreach ($this->state() + $configurator as $key => $value)
             $this->parseItem($key, $value);
     }
 
