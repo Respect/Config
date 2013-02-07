@@ -163,7 +163,7 @@ class Container extends ArrayObject
     private function state()
     {
         return array_filter($this->getArrayCopy(), function ($v) {
-            return !is_object($v) || get_class($v) != __NAMESPACE__.'\\Instantiator';
+            return !is_object($v) || !$v instanceof Instantiator;
         });
     }
 
