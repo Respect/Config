@@ -74,23 +74,23 @@ class Container extends ArrayObject
 
         if (is_null($configurator))
             return;
-            
+
         if (is_array($configurator))
             return $this->loadArray($configurator);
-            
+
         if (file_exists($configurator))
             if (is_file($configurator))
                 return $this->loadFile($configurator);
             elseif (is_dir($configurator))
                 return $this->loadFileMultiple(scandir($configurator));
-            
+
         if (is_string($configurator))
             return $this->loadString($configurator);
 
         $this->configurator = $configurator;
         throw new Argument("Invalid input. Must be a valid file or array");
     }
-    
+
     public function getItem($name, $raw=false)
     {
         if ($this->configurator)
@@ -98,39 +98,39 @@ class Container extends ArrayObject
 
         if (!isset($this[$name]))
             throw new Argument("Item $name not found");
-            
+
         if ($raw || !is_callable($this[$name]))
             return $this[$name];
 
         return $this->lazyLoad($name);
     }
-    
+
     public function loadString($configurator)
     {
         $iniData = parse_ini_string($configurator, true);
         if (false === $iniData || count($iniData) == 0)
             throw new Argument("Invalid configuration string");
-        
+
         return $this->loadArray($iniData);
     }
 
     public function loadFileMultiple(array $configurators)
-    {    
+    {
         return $this->loadStringMultiple(
-            array_map('file_get_contents', 
+            array_map('file_get_contents',
                 array_filter($configurators, 'is_file')
             )
         );
     }
 
-    public function loadStringMultiple(array $configurators) 
+    public function loadStringMultiple(array $configurators)
     {
         uasort($configurators, function($first, $second) {
             preg_match_all('#\[([^] ]+)\]#', $first, $usedOnFirst);
             preg_match_all('#\[([^] ]+)\]#', $second, $usedOnSecond);
             preg_match_all('#\[([^]]+) [^]]+\]#', $first, $declaredOnFirst);
             preg_match_all('#\[([^]]+) [^]]+\]#', $second, $declaredOnSecond);
-            
+
             $usedOnFirst = array_unique($usedOnFirst[1]);
             $usedOnSecond = array_unique($usedOnSecond[1]);
             $declaredOnFirst = array_unique($declaredOnFirst[1]);
@@ -156,7 +156,7 @@ class Container extends ArrayObject
         $iniData = parse_ini_file($configurator, true);
         if (false === $iniData)
             throw new Argument("Invalid configuration INI file");
-        
+
         return $this->loadArray($iniData);
     }
 
@@ -170,7 +170,7 @@ class Container extends ArrayObject
     {
         return $this->getItem($name);
     }
-    
+
     public function __set($name, $value)
     {
         if (isset($this[$name]) && $this[$name] instanceof Instantiator)
@@ -308,9 +308,10 @@ class Container extends ArrayObject
         $callback = $this[$name];
         if ($callback instanceof Instantiator && $callback->getMode() != Instantiator::MODE_FACTORY) {
             return $this[$name] = $callback();
-        } 
+        }
 
         return $callback();
     }
 
 }
+

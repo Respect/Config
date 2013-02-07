@@ -43,7 +43,7 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
     }
-    
+
     public function testMethodWithObjectProperty()
     {
         $i = new Instantiator(__NAMESPACE__ . '\\testClass');
@@ -54,7 +54,7 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
         $testObject = $i->getInstance();
         $this->assertTrue($testObject->myPropertyUsed);
     }
-    
+
     public function testMethodSingleParam()
     {
         $i = new Instantiator(__NAMESPACE__ . '\\testClass');
@@ -109,7 +109,7 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
         $s = $i1->getInstance();
         $this->assertEquals('stdClass', get_class($s->foo));
     }
-    
+
     public function testMagickInvoke()
     {
         $i1 = new Instantiator('stdClass');
@@ -133,7 +133,7 @@ class testClass
         if ($foo)
             $this->ok = true;
     }
-    
+
     public function usingProperty()
     {
         if ($this->myProperty == 'bar')
@@ -159,3 +159,4 @@ class testClass
     }
 
 }
+

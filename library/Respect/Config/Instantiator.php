@@ -47,9 +47,9 @@ class Instantiator
 
     public function getInstance($forceNew=false)
     {
-        if ($this->mode == static::MODE_FACTORY) 
+        if ($this->mode == static::MODE_FACTORY)
             $this->instance = null;
-        
+
         if ($this->instance && !$forceNew)
             return $this->instance;
 
@@ -69,17 +69,17 @@ class Instantiator
         if (empty($instance))
             if (empty($this->constructor) || !$hasConstructor)
                 $instance = new $className;
-             else 
+             else
                 $instance = $this->reflection->newInstanceArgs(
                     $this->cleanupParams($this->constructor)
                 );
 
         foreach ($this->propertySetters as $property => $value)
             $instance->{$property} = $this->lazyLoad($value);
-            
+
         foreach ($this->methodCalls as $methodCalls)
             $this->performMethodCalls($instance, $methodCalls);
-            
+
         return $this->instance = $instance;
     }
 
@@ -145,7 +145,7 @@ class Instantiator
     protected function processValue($value)
     {
         if (is_array($value))
-            foreach ($value as $valueKey => $subValue) 
+            foreach ($value as $valueKey => $subValue)
                 $value[$valueKey] = $this->processValue($subValue);
 
         return $value;
@@ -178,7 +178,7 @@ class Instantiator
         list($methodName, $calls) = $methodCalls;
         $resultCallback = $resultCallback ?: function(){};
 
-        foreach ($calls as $arguments) 
+        foreach ($calls as $arguments)
             if (is_array($arguments))
                 $resultCallback(call_user_func_array(
                     array($class, $methodName),
@@ -191,3 +191,4 @@ class Instantiator
     }
 
 }
+

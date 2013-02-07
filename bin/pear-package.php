@@ -69,3 +69,4 @@ $dom->preserveWhiteSpace = false;
 $dom->formatOutput = true;
 $dom->loadXML($package_data->asXML());
 $dom->save($package_xml_file);
+

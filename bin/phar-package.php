@@ -27,7 +27,7 @@ $phar->addFromString("autoload.php", <<<'LOADER'
             array_splice($fileParts, -1, 1, explode('_', current($fileParts)));
 
         $fileName = implode(DIRECTORY_SEPARATOR, $fileParts) . '.php';
-        
+
         if (stream_resolve_include_path($fileName))
             require $fileName;
     });
@@ -36,3 +36,4 @@ LOADER
 );
 
 $phar->setStub("<?php Phar::mapPhar('$phar_name'); include 'phar://$phar_name/autoload.php'; __HALT_COMPILER();");
+

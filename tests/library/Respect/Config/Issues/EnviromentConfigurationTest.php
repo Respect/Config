@@ -3,13 +3,13 @@ namespace Respect\Config;
 
 class EnviromentConfigurationTest extends \PHPUnit_Framework_TestCase
 {
-	/**
-	 * @group 	issues
-	 * @ticket  30	
-	 */
-	public function testEnviromentConfiguration30()
-	{
-		$config = "
+    /**
+     * @group   issues
+     * @ticket  30
+     */
+    public function testEnviromentConfiguration30()
+    {
+        $config = "
 [development]
 user = alganet
 
@@ -23,5 +23,6 @@ account = [user]
         $config  = array_merge($config[$ENVIRONMENT], $config);
         $container = new Container($config);
         $this->assertEquals($expected, $container->account); //respect
-	}
+    }
 }
+

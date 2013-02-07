@@ -211,7 +211,7 @@ INI;
         $this->assertEquals($expectedFoo, $instantiator->getParam('foo'));
         $this->assertEquals($expectedBaz, $instantiator->getParam('baz'));
     }
-    
+
     public function testGetItemLazyLoad()
     {
         $c = new Container;
@@ -233,7 +233,7 @@ INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertFalse($GLOBALS['_SHIT_']);
-        $GLOBALS['_SHIT_'] = false; 
+        $GLOBALS['_SHIT_'] = false;
     }
 
     public function testSequencesConstructingLazy()
@@ -384,7 +384,7 @@ INI;
 
 }
 class Bar {}
-class Foo 
+class Foo
 {
     function hello($some, Bar $bar) {
         $this->bar = $bar;
@@ -398,10 +398,10 @@ class WheneverIBornIPopulateAGlobalCalled_SHIT_
     }
 }
 
-
 class DatabaseWow {
     public $c;
     public function __construct($con) {
         $this->c = $con;
     }
 }
+
