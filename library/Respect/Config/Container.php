@@ -5,7 +5,7 @@ namespace Respect\Config;
 use UnexpectedValueException as Value;
 use InvalidArgumentException as Argument;
 use ArrayObject;
-use ReflectionMethod;
+use ReflectionClass;
 use ReflectionFunction;
 
 class Container extends ArrayObject
@@ -30,8 +30,11 @@ class Container extends ArrayObject
         if (is_callable($spec)) {
             if (is_array($spec)) {
                 list($class, $method) = $spec;
-                $mirror = new ReflectionMethod($class, $method);
+                $class = new ReflectionClass($class);
+                $object = $class->newInstance();
+                $mirror = $class->getMethod($method);
             } else {
+                $object = false;
                 $mirror = new ReflectionFunction($spec);
             }
             $container = $this;
@@ -44,6 +47,8 @@ class Container extends ArrayObject
                 },
                 $mirror->getParameters()
             );
+            if ($object)
+                return $mirror->invokeArgs($object, $arguments);
             return $mirror->invokeArgs($arguments);
         }
         if ((bool) array_filter(func_get_args(), 'is_object')) {
