@@ -400,11 +400,22 @@ INI;
         $this->assertInstanceOf('DateTime', $result2);
         $this->assertTrue($called);
     }
+    public function testByMethodCallback()
+    {
+        $c = new Container();
+        $c(new \DateTime);
+        $result = $c(array(__NAMESPACE__.'\\Foo', 'hey'));
+        $this->assertInstanceOf('DateTime', $result);
+    }
 
 }
 class Bar {}
 class Foo
 {
+    function hey(\DateTime $date) {
+       return $date;
+    }
+
     function hello($some, Bar $bar) {
         $this->bar = $bar;
     }
