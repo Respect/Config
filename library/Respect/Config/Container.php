@@ -71,7 +71,7 @@ class Container extends ArrayObject
         return $this->getItem($name);
     }
 
-    public function configure()
+    protected function configure()
     {
         $configurator = $this->configurator;
         $this->configurator = null;
@@ -108,7 +108,7 @@ class Container extends ArrayObject
         return $this->lazyLoad($name);
     }
 
-    public function loadString($configurator)
+    protected function loadString($configurator)
     {
         $iniData = parse_ini_string($configurator, true);
         if (false === $iniData || count($iniData) == 0)
@@ -117,7 +117,7 @@ class Container extends ArrayObject
         return $this->loadArray($iniData);
     }
 
-    public function loadFileMultiple($folder, array $configurators)
+    protected function loadFileMultiple($folder, array $configurators)
     {
         return $this->loadStringMultiple(
             array_map('file_get_contents',
@@ -156,7 +156,7 @@ class Container extends ArrayObject
             $this->loadString($c);
     }
 
-    public function loadFile($configurator)
+    protected function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
         if (false === $iniData)
@@ -165,7 +165,7 @@ class Container extends ArrayObject
         return $this->loadArray($iniData);
     }
 
-    private function state()
+    protected function state()
     {
         return array_filter($this->getArrayCopy(), function ($v) {
             return !is_object($v) || !$v instanceof Instantiator;
