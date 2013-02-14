@@ -46,6 +46,15 @@ INI;
         $this->assertEquals('panda', $c->getItem('happy'));
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     * @expectedExceptionMessage Invalid input. Must be a valid file or array
+     */
+    public function testConfigure() {
+        $c = new Container(1);
+        $c->a;
+    }
+
     public function testLoadInvalid()
     {
         $this->setExpectedException('InvalidArgumentException');
