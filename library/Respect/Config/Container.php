@@ -92,7 +92,6 @@ class Container extends ArrayObject
         if (is_string($configurator))
             return $this->loadString($configurator);
 
-        $this->configurator = $configurator;
         throw new Argument("Invalid input. Must be a valid file or array");
     }
 
