@@ -2,7 +2,6 @@
 
 namespace Respect\Config;
 
-use UnexpectedValueException as Value;
 use InvalidArgumentException as Argument;
 use ArrayObject;
 use ReflectionClass;
