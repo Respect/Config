@@ -36,6 +36,16 @@ INI;
         $this->assertEquals('bat', $c->getItem('baz'));
     }
 
+    public function testLoadFileMultiple() {
+        $c = new Container('multiple');
+        $this->assertTrue(isset($c->foo));
+        $this->assertEquals('bar', $c->getItem('foo'));
+        $this->assertEquals('bat', $c->getItem('baz'));
+        $this->assertTrue(isset($c->panda));
+        $this->assertEquals('happy', $c->getItem('panda'));
+        $this->assertEquals('panda', $c->getItem('happy'));
+    }
+
     public function testLoadInvalid()
     {
         $this->setExpectedException('InvalidArgumentException');
