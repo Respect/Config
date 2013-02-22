@@ -91,7 +91,7 @@ myconfig.ini:
 
 Needless to say that this would work on sequences too.
 
-Instances 
+Instances
 ---------
 
 Using sections
