@@ -1,21 +1,33 @@
 <?php
-
 namespace Respect\Config;
 
-function file_exists($name) { //override for testing
-    return $name == 'exists.ini';
-}
-
-function is_file($name) { //override for testing
-    return $name == 'exists.ini';
-}
-
-function parse_ini_file() { //override for testing
-    return array('foo'=>'bar', 'baz'=>'bat');
-}
+use Respect\Test\StreamWrapper;
 
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
+    protected function setUp()
+    {
+        if (!in_array($this->getName(), array('testLoadFile', 'testLoadFileMultiple')))
+            return;
+
+        $ini = <<<INI
+foo = bar
+baz = bat
+INI;
+        $pnd = <<<PND
+happy = panda
+panda = happy
+PND;
+        StreamWrapper::setStreamOverrides(array(
+            'exists.ini' => $ini,
+            'multiple/foo-bar-baz.ini' => $ini,
+            'multiple/happy-panda.ini' => $pnd,
+        ));
+    }
+
+    public function tearDown() {
+        StreamWrapper::releaseOverrides();
+    }
 
     public function testLoadArray()
     {
@@ -28,6 +40,7 @@ INI;
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
+
     public function testLoadFile()
     {
         $c = new Container('exists.ini');
