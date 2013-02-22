@@ -1,4 +1,4 @@
-Respect\Config [![Build Status](https://travis-ci.org/Respect/Config.png?branch=master)](https://travis-ci.org/Respect/Config)
+Respect\Config [![Build Status](https://travis-ci.org/Respect/Config.png?branch=develop)](https://travis-ci.org/Respect/Config)
 ==============
 
 A powerful, small, deadly simple configurator and dependency injection container made to be easy. Featuring:
