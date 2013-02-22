@@ -1,9 +1,17 @@
 language: php
-script: make test
 
 php:
   - 5.3
   - 5.4
+
+env: FOUNDATION_NO_WAIT=1
+
+before_script:
+  - "make composer-install-dev"
+  - "phpenv rehash"
+
+script:
+  - "make testdox"
 
 branches:
   only:
