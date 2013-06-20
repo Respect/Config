@@ -108,7 +108,7 @@ class Container extends ArrayObject
         return $this->lazyLoad($name);
     }
 
-    protected function loadString($configurator)
+    public function loadString($configurator)
     {
         $iniData = parse_ini_string($configurator, true);
         if (false === $iniData || count($iniData) == 0)
@@ -117,7 +117,7 @@ class Container extends ArrayObject
         return $this->loadArray($iniData);
     }
 
-    protected function loadFileMultiple($folder, array $configurators)
+    public function loadFileMultiple($folder, array $configurators)
     {
         return $this->loadStringMultiple(
             array_map('file_get_contents',
@@ -156,7 +156,7 @@ class Container extends ArrayObject
             $this->loadString($c);
     }
 
-    protected function loadFile($configurator)
+    public function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
         if (false === $iniData)
