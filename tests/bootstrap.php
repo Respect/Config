@@ -9,7 +9,7 @@ $paths[] = trim(`pear config-get php_dir`);
 if (file_exists(dirname(__DIR__).'/vendor/composer')) {
     $map = require dirname(__DIR__).'/vendor/composer/autoload_namespaces.php';
     foreach ($map as $path)
-        $paths[] = $path;
+        $paths[] = current($path);
 }
 
 natsort($paths);
