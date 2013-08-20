@@ -1,21 +1,9 @@
 {
     "name": "respect/config",
-    "version": "1.0.0",
     "type": "library",
-    "time": "2013-02-22 04:37:20",
     "homepage": "https://github.com/Respect/Config",
     "description": "A powerful, small, deadly simple configurator and dependency injection container made to be easy.",
     "keywords": ["respect", "config", "dic", "dependency injection"],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url" : "git://github.com/Respect/Config.git"
-        },
-        {
-            "type": "vcs",
-            "url" : "git://github.com/Respect/Test.git"
-        }
-    ],
     "license": "BSD-3-Clause",
     "authors": [
         {
@@ -56,6 +44,7 @@
         "php": ">=5.3.0"
     },
     "require-dev": {
+        "phpunit/phpunit": "@stable",
         "respect/test": "dev-master"
     }
 }
