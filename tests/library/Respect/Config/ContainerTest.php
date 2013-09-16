@@ -41,6 +41,26 @@ INI;
         $this->assertEquals('bat', $c->getItem('baz'));
     }
 
+    public function testLoadNestedArray()
+    {
+        $ini = <<<INI
+db.driver = "mysql"
+db.host   = "localhost"
+db.name   = "my_database"
+db.dsn    = "[db.driver]:host=[db.host];dbname=[db.name]"
+INI;
+
+        $expected = array (
+            'driver'    => 'mysql',
+            'host'      => 'localhost',
+            'name'      => 'my_database',
+            'dsn'       => 'mysql:host=localhost;dbname=my_database',
+        );
+
+        $container = new Container(parse_ini_string($ini, true));
+        $this->assertEquals($expected, $container->getItem('db'));
+    }
+
     public function testLoadFile()
     {
         $c = new Container('exists.ini');

@@ -208,8 +208,49 @@ class Container extends ArrayObject
                 $this->offsetSet($key,  $this[$k]);
             else
                 $this->parseInstantiator($key, $value);
+        elseif (false !== strpos($key, '.'))
+            $this->parseNestedValues($key, $value);
         else
             $this->parseStandardItem($key, $value);
+    }
+
+    public function parseNestedValues($key, $value, $level = 1)
+    {
+        $pieces = explode('.', $key);
+        $name   = array_shift($pieces);
+        $total  = count($pieces);
+        $count  = 0;
+        $data   = array();
+
+        foreach ($pieces as $piece) {
+
+            if (++$count === $total) {
+                $data[$piece] = $this->parseValue($value);
+                continue;
+            }
+
+            if ($count === 1) {
+                if (false === isset($data[$piece])) {
+                    $data[$piece] = $data;
+                }
+                $data =& $data[$piece];
+
+            } else {
+
+                if (false === isset($data[$piece])) {
+                    $data[$piece] = array();
+                }
+
+                $data =& $data[$piece];
+            }
+        }
+
+        if (1 === $level) {
+            if ($this->offsetExists($name)) {
+                $data = array_merge_recursive((array) $this->offsetGet($name), $data);
+            }
+            $this->offsetSet($name, $data);
+        }
     }
 
     protected function parseSubValues(&$value)
@@ -310,9 +351,22 @@ class Container extends ArrayObject
     {
         $self = $this;
         return preg_replace_callback(
-            '/\[(\w+)\]/',
+            '/\[([\w.]+)\]/',
             function($match) use(&$self) {
-                return $self[$match[1]] ? : '';
+                $key = $match[1];
+                if (false === strpos($key, '.')) {
+                    $value = $self[$key] ? : '';
+                } else {
+
+                    $pieces = explode('.', $key);
+                    $name = array_shift($pieces);
+                    $value = $self[$name];
+                    foreach ($pieces as $piece) {
+                        $value = $value[$piece];
+                    }
+                }
+
+                return $value;
             }, $value
         );
     }
