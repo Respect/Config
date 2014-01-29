@@ -1,8 +1,5 @@
-Respect\Config [![Build Status](https://travis-ci.org/Respect/Config.png?branch=develop)](https://travis-ci.org/Respect/Config)
+Respect\Config [![Build Status](https://travis-ci.org/Respect/Config.png?branch=develop)](https://travis-ci.org/Respect/Config) [![Latest Stable Version](https://poser.pugx.org/respect/config/v/stable.png)](https://packagist.org/packages/respect/config) [![Total Downloads](https://poser.pugx.org/respect/config/downloads.png)](https://packagist.org/packages/respect/config) [![Latest Unstable Version](https://poser.pugx.org/respect/config/v/unstable.png)](https://packagist.org/packages/respect/config) [![License](https://poser.pugx.org/respect/config/license.png)](https://packagist.org/packages/respect/config)
 ==============
-
-[![Total Downloads](https://poser.pugx.org/respect/config/downloads.png)](https://packagist.org/packages/respect/config)
-[![Latest Stable Version](https://poser.pugx.org/respect/config/v/stable.png)](https://packagist.org/packages/respect/config)
 
 
 A powerful, small, deadly simple configurator and dependency injection container made to be easy. Featuring:
