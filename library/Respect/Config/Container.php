@@ -174,8 +174,12 @@ class Container extends ArrayObject
 
     public function loadArray(array $configurator)
     {
-        foreach ($this->state() + $configurator as $key => $value)
+        foreach ($this->state() + $configurator as $key => $value){
+            if ($value instanceof \Closure) {
+                continue;
+            }
             $this->parseItem($key, $value);
+        }
     }
 
     public function __get($name)
