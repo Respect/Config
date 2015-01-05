@@ -251,6 +251,16 @@ INI;
         $this->assertEquals('ok', $c->getItem('foo', false));
     }
 
+    public function testClosureWithLoadedFile()
+    {
+        $ini = <<<INI
+respect_blah = ""
+INI;
+        $c = new Container($ini);
+        $c->panda = function() { return 'ok'; };
+        $this->assertEquals('ok', $c->getItem('panda', false));   
+    }
+
     public function testLazyLoadinessOnMultipleConfigLevels()
     {
         $GLOBALS['_SHIT_'] = false;
