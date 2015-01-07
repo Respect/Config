@@ -1,19 +1,29 @@
-language: php
+sudo:
+  false
+
+language:
+  php
 
 php:
   - 5.3
   - 5.4
 
-env: FOUNDATION_NO_WAIT=1
+cache:
+  directories:
+    - vendor
 
 before_script:
-  - "make composer-install-dev"
-  - "phpenv rehash"
+  - composer install --dev --no-interaction --prefer-source
 
 script:
-  - "make testdox"
+  - vendor/bin/phpunit --configuration tests/phpunit.xml --colors --coverage-clover=coverage.clover tests/
 
-branches:
-  only:
-    - master
-    - develop
+after_script:
+  - wget https://scrutinizer-ci.com/ocular.phar
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
+
+notifications:
+  irc:
+    channels:
+      - "irc.freenode.org#php-respect"
+    use_notice: true

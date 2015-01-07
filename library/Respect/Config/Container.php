@@ -11,15 +11,16 @@ class Container extends ArrayObject
 {
     protected $configurator;
 
-    public function __construct($configurator=null)
+    public function __construct($configurator = null)
     {
         $this->configurator = $configurator;
     }
 
     public function __isset($name)
     {
-        if ($this->configurator)
+        if ($this->configurator) {
             $this->configure();
+        }
 
         return parent::offsetExists($name);
     }
@@ -46,8 +47,9 @@ class Container extends ArrayObject
                 },
                 $mirror->getParameters()
             );
-            if ($object)
+            if ($object) {
                 return $mirror->invokeArgs($object, $arguments);
+            }
             return $mirror->invokeArgs($arguments);
         }
         if ((bool) array_filter(func_get_args(), 'is_object')) {
@@ -56,11 +58,13 @@ class Container extends ArrayObject
             }
         }
 
-        foreach ($spec as $name => $item)
+        foreach ($spec as $name => $item) {
             parent::offsetSet($name, $item);
+        }
 
-        if ($this->configurator)
+        if ($this->configurator) {
             $this->configure();
+        }
 
         return $this;
     }
@@ -76,34 +80,42 @@ class Container extends ArrayObject
         $configurator = $this->configurator;
         $this->configurator = null;
 
-        if (is_null($configurator))
+        if (is_null($configurator)) {
             return;
+        }
 
-        if (is_array($configurator))
+        if (is_array($configurator)) {
             return $this->loadArray($configurator);
+        }
 
-        if (file_exists($configurator))
-            if (is_file($configurator))
+        if (file_exists($configurator)) {
+            if (is_file($configurator)) {
                 return $this->loadFile($configurator);
-            elseif (is_dir($configurator))
+            } elseif (is_dir($configurator)) {
                 return $this->loadFileMultiple($configurator, scandir($configurator));
+            }
+        }
 
-        if (is_string($configurator))
+        if (is_string($configurator)) {
             return $this->loadString($configurator);
+        }
 
         throw new Argument("Invalid input. Must be a valid file or array");
     }
 
-    public function getItem($name, $raw=false)
+    public function getItem($name, $raw = false)
     {
-        if ($this->configurator)
+        if ($this->configurator) {
             $this->configure();
+        }
 
-        if (!isset($this[$name]))
+        if (!isset($this[$name])) {
             throw new Argument("Item $name not found");
+        }
 
-        if ($raw || !is_callable($this[$name]))
+        if ($raw || !is_callable($this[$name])) {
             return $this[$name];
+        }
 
         return $this->lazyLoad($name);
     }
@@ -111,8 +123,9 @@ class Container extends ArrayObject
     public function loadString($configurator)
     {
         $iniData = parse_ini_string($configurator, true);
-        if (false === $iniData || count($iniData) == 0)
+        if (false === $iniData || count($iniData) == 0) {
             throw new Argument("Invalid configuration string");
+        }
 
         return $this->loadArray($iniData);
     }
@@ -120,10 +133,17 @@ class Container extends ArrayObject
     public function loadFileMultiple($folder, array $configurators)
     {
         return $this->loadStringMultiple(
-            array_map('file_get_contents',
-                array_filter(array_map(function ($v) use ($folder) {
-                    return $folder.DIRECTORY_SEPARATOR.$v;
-                }, $configurators), 'is_file')
+            array_map(
+                'file_get_contents',
+                array_filter(
+                    array_map(
+                        function ($v) use ($folder) {
+                            return $folder.DIRECTORY_SEPARATOR.$v;
+                        },
+                        $configurators
+                    ),
+                    'is_file'
+                )
             )
         );
     }
@@ -147,20 +167,23 @@ class Container extends ArrayObject
             $usagesFirst = count($usedByFirstDeclaredBySecond);
             $usagesSecond = count($usedBySecondDeclaredByFirst);
 
-            if ($usagesFirst == $usagesSecond)
+            if ($usagesFirst == $usagesSecond) {
                 return 0;
-            else
+            } else {
                 return $usagesFirst < $usagesSecond ? -1 : 1;
+            }
         });
-        foreach ($configurators as $c)
+        foreach ($configurators as $c) {
             $this->loadString($c);
+        }
     }
 
     public function loadFile($configurator)
     {
         $iniData = parse_ini_file($configurator, true);
-        if (false === $iniData)
+        if (false === $iniData) {
             throw new Argument("Invalid configuration INI file");
+        }
 
         return $this->loadArray($iniData);
     }
@@ -174,8 +197,12 @@ class Container extends ArrayObject
 
     public function loadArray(array $configurator)
     {
-        foreach ($this->state() + $configurator as $key => $value)
+        foreach ($this->state() + $configurator as $key => $value) {
+            if ($value instanceof \Closure) {
+                continue;
+            }
             $this->parseItem($key, $value);
+        }
     }
 
     public function __get($name)
@@ -185,8 +212,9 @@ class Container extends ArrayObject
 
     public function __set($name, $value)
     {
-        if (isset($this[$name]) && $this[$name] instanceof Instantiator)
+        if (isset($this[$name]) && $this[$name] instanceof Instantiator) {
             $this[$name]->setInstance($value);
+        }
         $this[$name] = $value;
     }
 
@@ -203,28 +231,33 @@ class Container extends ArrayObject
     protected function parseItem($key, $value)
     {
         $key = trim($key);
-        if ($this->keyHasInstantiator($key))
-            if ($this->keyHasStateInstance($key, $k))
-                $this->offsetSet($key,  $this[$k]);
-            else
+        if ($this->keyHasInstantiator($key)) {
+            if ($this->keyHasStateInstance($key, $k)) {
+                $this->offsetSet($key, $this[$k]);
+            } else {
                 $this->parseInstantiator($key, $value);
-        else
+            }
+        } else {
             $this->parseStandardItem($key, $value);
+        }
     }
 
     protected function parseSubValues(&$value)
     {
-        foreach ($value as &$subValue)
+        foreach ($value as &$subValue) {
             $subValue = $this->parseValue($subValue);
+        }
+
         return $value;
     }
 
     protected function parseStandardItem($key, &$value)
     {
-        if (is_array($value))
+        if (is_array($value)) {
             $this->parseSubValues($value);
-        else
+        } else {
             $value = $this->parseValue($value);
+        }
 
         $this->offsetSet($key, $value);
     }
@@ -243,23 +276,26 @@ class Container extends ArrayObject
         }
         $instantiator = new Instantiator($keyClass);
 
-        if (is_array($value))
-            foreach ($value as $property => $pValue)
+        if (is_array($value)) {
+            foreach ($value as $property => $pValue) {
                 $instantiator->setParam($property, $this->parseValue($pValue));
-        else
+            }
+        } else {
             $instantiator->setParam('__construct', $this->parseValue($value));
+        }
 
         $this->offsetSet($keyName, $instantiator);
     }
 
     protected function parseValue($value)
     {
-        if (is_array($value))
+        if (is_array($value)) {
             return $this->parseSubValues($value);
-        elseif (empty($value))
+        } elseif (empty($value)) {
             return null;
-        else
+        } else {
             return $this->parseSingleValue($value);
+        }
     }
 
     protected function hasCompleteBrackets($value)
@@ -270,40 +306,45 @@ class Container extends ArrayObject
     protected function parseSingleValue($value)
     {
         $value = trim($value);
-        if ($this->hasCompleteBrackets($value))
+        if ($this->hasCompleteBrackets($value)) {
             return $this->parseBrackets($value);
-        else
+        } else {
             return $this->parseConstants($value);
+        }
     }
 
     protected function parseConstants($value)
     {
-        if (preg_match('/^[A-Z_]+([:]{2}[A-Z_]+)?$/', $value) && defined($value))
+        if (preg_match('/^[A-Z_]+([:]{2}[A-Z_]+)?$/', $value) && defined($value)) {
             return constant($value);
-        else
+        } else {
             return $value;
+        }
     }
 
     protected function matchSequence(&$value)
     {
-        if (preg_match('/^\[(.*?,.*?)\]$/', $value, $match))
+        if (preg_match('/^\[(.*?,.*?)\]$/', $value, $match)) {
             return (boolean) ($value = $match[1]);
+        }
     }
 
     protected function matchReference(&$value)
     {
-        if (preg_match('/^\[(\w+)+\]$/', $value, $match))
+        if (preg_match('/^\[(\w+)+\]$/', $value, $match)) {
             return (boolean) ($value = $match[1]);
+        }
     }
 
     protected function parseBrackets($value)
     {
-        if ($this->matchSequence($value))
+        if ($this->matchSequence($value)) {
             return $this->parseArgumentList($value);
-        elseif ($this->matchReference($value))
+        } elseif ($this->matchReference($value)) {
             return $this->getItem($value, true);
-        else
+        } else {
             return $this->parseVariables($value);
+        }
     }
 
     protected function parseVariables($value)
@@ -311,9 +352,10 @@ class Container extends ArrayObject
         $self = $this;
         return preg_replace_callback(
             '/\[(\w+)\]/',
-            function($match) use(&$self) {
+            function($match) use (&$self) {
                 return $self[$match[1]] ? : '';
-            }, $value
+            },
+            $value
         );
     }
 
@@ -332,6 +374,4 @@ class Container extends ArrayObject
 
         return $callback();
     }
-
 }
-
