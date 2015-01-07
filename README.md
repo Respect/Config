@@ -1,4 +1,4 @@
-Respect\Config 
+Respect\Config
 ==============
 
 [![Build Status](https://travis-ci.org/Respect/Config.png?branch=develop)](https://travis-ci.org/Respect/Config) [![Latest Stable Version](https://poser.pugx.org/respect/config/v/stable.png)](https://packagist.org/packages/respect/config) [![Total Downloads](https://poser.pugx.org/respect/config/downloads.png)](https://packagist.org/packages/respect/config) [![Latest Unstable Version](https://poser.pugx.org/respect/config/v/unstable.png)](https://packagist.org/packages/respect/config) [![License](https://poser.pugx.org/respect/config/license.png)](https://packagist.org/packages/respect/config)
@@ -14,6 +14,8 @@ Installation
 ------------
 
 Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Config). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible.
+
+Works on PHP 5.3 and 5.4 only.
 
 Autoloading
 -----------
