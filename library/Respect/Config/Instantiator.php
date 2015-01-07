@@ -45,40 +45,49 @@ class Instantiator
         return $this->className;
     }
 
-    public function getInstance($forceNew=false)
+    public function getInstance($forceNew = false)
     {
-        if ($this->mode == static::MODE_FACTORY)
+        if ($this->mode == static::MODE_FACTORY) {
             $this->instance = null;
+        }
 
-        if ($this->instance && !$forceNew)
+        if ($this->instance && !$forceNew) {
             return $this->instance;
+        }
 
         $className     = $this->className;
         $staticMethods = count($this->staticMethodCalls);
         foreach ($this->staticMethodCalls as $methodCalls) {
-            $this->performMethodCalls($className, $methodCalls,
+            $this->performMethodCalls(
+                $className,
+                $methodCalls,
                 function($result) use ($className, &$instance, $staticMethods) {
-                    if ($result instanceof $className || ($staticMethods == 1 && is_object($result)))
+                    if ($result instanceof $className || ($staticMethods == 1 && is_object($result))) {
                         $instance = $result;
+                    }
                 }
             );
         }
 
         $constructor     = $this->reflection->getConstructor();
         $hasConstructor  = ($constructor) ? $constructor->isPublic() : false ;
-        if (empty($instance))
-            if (empty($this->constructor) || !$hasConstructor)
+        if (empty($instance)) {
+            if (empty($this->constructor) || !$hasConstructor) {
                 $instance = new $className;
-             else
+            } else {
                 $instance = $this->reflection->newInstanceArgs(
                     $this->cleanupParams($this->constructor)
                 );
+            }
+        }
 
-        foreach ($this->propertySetters as $property => $value)
+        foreach ($this->propertySetters as $property => $value) {
             $instance->{$property} = $this->lazyLoad($value);
+        }
 
-        foreach ($this->methodCalls as $methodCalls)
+        foreach ($this->methodCalls as $methodCalls) {
             $this->performMethodCalls($instance, $methodCalls);
+        }
 
         return $this->instance = $instance;
     }
@@ -97,27 +106,30 @@ class Instantiator
     {
         $value = $this->processValue($value);
 
-        if ($this->matchStaticMethod($name))
+        if ($this->matchStaticMethod($name)) {
             $this->staticMethodCalls[] = array($name, $value);
-        elseif ($this->matchConstructorParam($name))
+        } elseif ($this->matchConstructorParam($name)) {
             $this->constructor[$name] = $value;
-        elseif ($this->matchFullConstructor($name, $value))
+        } elseif ($this->matchFullConstructor($name, $value)) {
             $this->constructor = $value;
-        elseif ($this->matchMethod($name))
+        } elseif ($this->matchMethod($name)) {
             $this->methodCalls[] = array($name, $value);
-        else
+        } else {
             $this->propertySetters[$name] = $value;
+        }
 
         $this->params[$name] = $value;
     }
 
     protected function cleanupParams(array $params)
     {
-        while (null === end($params))
+        while (null === end($params)) {
             unset($params[key($params)]);
+        }
 
-        foreach ($params as &$p)
+        foreach ($params as &$p) {
             $p = $this->lazyLoad($p);
+        }
 
         return $params;
     }
@@ -132,21 +144,25 @@ class Instantiator
         $params = array();
         $constructor = $class->getConstructor();
 
-        if (!$constructor)
+        if (!$constructor) {
             return array();
+        }
 
-        foreach ($constructor->getParameters() as $param)
+        foreach ($constructor->getParameters() as $param) {
             $params[$param->getName()] = $param->isDefaultValueAvailable() ?
                 $param->getDefaultValue() : null;
+        }
 
         return $params;
     }
 
     protected function processValue($value)
     {
-        if (is_array($value))
-            foreach ($value as $valueKey => $subValue)
+        if (is_array($value)) {
+            foreach ($value as $valueKey => $subValue) {
                 $value[$valueKey] = $this->processValue($subValue);
+            }
+        }
 
         return $value;
     }
@@ -173,22 +189,24 @@ class Instantiator
         && $this->reflection->getMethod($name)->isStatic();
     }
 
-    protected function performMethodCalls($class, array $methodCalls, $resultCallback=null)
+    protected function performMethodCalls($class, array $methodCalls, $resultCallback = null)
     {
         list($methodName, $calls) = $methodCalls;
-        $resultCallback = $resultCallback ?: function(){};
+        $resultCallback = $resultCallback ?: function() {
 
-        foreach ($calls as $arguments)
-            if (is_array($arguments))
+        };
+
+        foreach ($calls as $arguments) {
+            if (is_array($arguments)) {
                 $resultCallback(call_user_func_array(
                     array($class, $methodName),
                     $this->cleanUpParams($arguments)
                 ));
-            elseif (!is_null($arguments))
+            } elseif (!is_null($arguments)) {
                 $resultCallback(call_user_func(array($class, $methodName), $this->lazyLoad($arguments)));
-            else
+            } else {
                 $resultCallback(call_user_func(array($class, $methodName)));
+            }
+        }
     }
-
 }
-
