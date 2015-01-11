@@ -1,10 +1,3 @@
-#<? a Courtesy of Respect/Foundation
-.foundation
-*.tgz
-*.phar
 *.lock
-*tmp
-scratch/*
 tests/reports
 vendor
-*.bak*
