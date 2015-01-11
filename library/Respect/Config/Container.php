@@ -42,6 +42,7 @@ class Container extends ArrayObject
                 function ($param) use ($container) {
                     if ($paramClass = $param->getClass()) {
                         $paramClassName = $paramClass->getName();
+
                         return $container->getItem($paramClassName);
                     }
                 },
@@ -50,6 +51,7 @@ class Container extends ArrayObject
             if ($object) {
                 return $mirror->invokeArgs($object, $arguments);
             }
+
             return $mirror->invokeArgs($arguments);
         }
         if ((bool) array_filter(func_get_args(), 'is_object')) {
@@ -72,6 +74,7 @@ class Container extends ArrayObject
     public function __call($name, $dict)
     {
         $this->__invoke($dict[0]);
+
         return $this->getItem($name);
     }
 
@@ -150,7 +153,7 @@ class Container extends ArrayObject
 
     public function loadStringMultiple(array $configurators)
     {
-        uasort($configurators, function($first, $second) {
+        uasort($configurators, function ($first, $second) {
             preg_match_all('#\[([^] ]+)\]#', $first, $usedOnFirst);
             preg_match_all('#\[([^] ]+)\]#', $second, $usedOnSecond);
             preg_match_all('#\[([^]]+) [^]]+\]#', $first, $declaredOnFirst);
@@ -292,7 +295,7 @@ class Container extends ArrayObject
         if (is_array($value)) {
             return $this->parseSubValues($value);
         } elseif (empty($value)) {
-            return null;
+            return;
         } else {
             return $this->parseSingleValue($value);
         }
@@ -350,10 +353,11 @@ class Container extends ArrayObject
     protected function parseVariables($value)
     {
         $self = $this;
+
         return preg_replace_callback(
             '/\[(\w+)\]/',
-            function($match) use (&$self) {
-                return $self[$match[1]] ? : '';
+            function ($match) use (&$self) {
+                return $self[$match[1]] ?: '';
             },
             $value
         );
@@ -362,6 +366,7 @@ class Container extends ArrayObject
     protected function parseArgumentList($value)
     {
         $subValues = explode(',', $value);
+
         return $this->parseSubValues($subValues);
     }
 

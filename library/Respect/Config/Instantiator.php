@@ -61,7 +61,7 @@ class Instantiator
             $this->performMethodCalls(
                 $className,
                 $methodCalls,
-                function($result) use ($className, &$instance, $staticMethods) {
+                function ($result) use ($className, &$instance, $staticMethods) {
                     if ($result instanceof $className || ($staticMethods == 1 && is_object($result))) {
                         $instance = $result;
                     }
@@ -70,10 +70,10 @@ class Instantiator
         }
 
         $constructor     = $this->reflection->getConstructor();
-        $hasConstructor  = ($constructor) ? $constructor->isPublic() : false ;
+        $hasConstructor  = ($constructor) ? $constructor->isPublic() : false;
         if (empty($instance)) {
             if (empty($this->constructor) || !$hasConstructor) {
-                $instance = new $className;
+                $instance = new $className();
             } else {
                 $instance = $this->reflection->newInstanceArgs(
                     $this->cleanupParams($this->constructor)
@@ -175,7 +175,7 @@ class Instantiator
     protected function matchFullConstructor($name, &$value)
     {
         return $name == '__construct'
-        || ( $name == $this->className && stripos($this->className, '\\'));
+        || ($name == $this->className && stripos($this->className, '\\'));
     }
 
     protected function matchMethod($name)
@@ -192,7 +192,7 @@ class Instantiator
     protected function performMethodCalls($class, array $methodCalls, $resultCallback = null)
     {
         list($methodName, $calls) = $methodCalls;
-        $resultCallback = $resultCallback ?: function() {
+        $resultCallback = $resultCallback ?: function () {
 
         };
 
