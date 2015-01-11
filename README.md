@@ -1,6 +1,10 @@
 # Respect\Config
 
-[![Build Status](https://travis-ci.org/Respect/Config.png?branch=develop)](https://travis-ci.org/Respect/Config) [![Latest Stable Version](https://poser.pugx.org/respect/config/v/stable.png)](https://packagist.org/packages/respect/config) [![Total Downloads](https://poser.pugx.org/respect/config/downloads.png)](https://packagist.org/packages/respect/config) [![Latest Unstable Version](https://poser.pugx.org/respect/config/v/unstable.png)](https://packagist.org/packages/respect/config) [![License](https://poser.pugx.org/respect/config/license.png)](https://packagist.org/packages/respect/config)
+[![Build Status](https://img.shields.io/travis/Respect/Config.svg?style=flat-square)](http://travis-ci.org/Respect/Config)
+[![Code Coverage](https://img.shields.io/scrutinizer/coverage/g/Respect/Config.svg?style=flat-square)](https://scrutinizer-ci.com/g/Respect/Config/?branch=master)
+[![Latest Stable Version](https://img.shields.io/packagist/v/respect/config.svg?style=flat-square)](https://packagist.org/packages/respect/config)
+[![Total Downloads](https://img.shields.io/packagist/dt/respect/config.svg?style=flat-square)](https://packagist.org/packages/respect/config)
+[![License](https://img.shields.io/packagist/l/respect/config.svg?style=flat-square)](https://packagist.org/packages/respect/config)
 
 A powerful, small, deadly simple configurator and dependency injection container made to be easy. Featuring:
 
