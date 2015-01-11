@@ -1,3 +1,4 @@
 *.lock
 Makefile
+phpunit.xml
 vendor

@@ -24,33 +24,7 @@ composer require respect/config
 
 Works on PHP 5.3 and 5.4 only.
 
-## Autoloading
-
-You can set up Respect\Config for autoloading. We recommend using the
-SplClassLoader. Here's a nice sample:
-
-````php
-set_include_path('/my/library' . PATH_SEPARATOR . get_include_path());
-require_once 'SplClassLoader.php';
-$respectLoader = new \SplClassLoader();
-$respectLoader->register();
-````
-
-
-## Running Tests
-
-We didn't created our tests just for us to apreciate. To run them,
-you'll need phpunit 3.5 or greater. Then, just chdir into the `/tests` folder
-we distribute and run them like this:
-
-````bash
-cd /my/RespectConfig/tests
-phpunit .
-````
-
-You can tweak the phpunit.xml under that `/tests` folder to your needs.
-#
-=============
+# Feature Guide
 
 ## Variable Expanding
 
