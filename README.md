@@ -13,7 +13,12 @@ A powerful, small, deadly simple configurator and dependency injection container
 Installation
 ------------
 
-Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Config). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible.
+The package is available on [Packagist](https://packagist.org/packages/arara/process).
+You can install it using [Composer](http://getcomposer.org).
+
+```bash
+composer require respect/config
+```
 
 Works on PHP 5.3 and 5.4 only.
 
