@@ -1,5 +1,4 @@
-Respect\Config
-==============
+# Respect\Config
 
 [![Build Status](https://travis-ci.org/Respect/Config.png?branch=develop)](https://travis-ci.org/Respect/Config) [![Latest Stable Version](https://poser.pugx.org/respect/config/v/stable.png)](https://packagist.org/packages/respect/config) [![Total Downloads](https://poser.pugx.org/respect/config/downloads.png)](https://packagist.org/packages/respect/config) [![Latest Unstable Version](https://poser.pugx.org/respect/config/v/unstable.png)](https://packagist.org/packages/respect/config) [![License](https://poser.pugx.org/respect/config/license.png)](https://packagist.org/packages/respect/config)
 
@@ -10,8 +9,7 @@ A powerful, small, deadly simple configurator and dependency injection container
 * Extends the INI configuration with a custom dialect.
 * Implements lazy loading for object instances.
 
-Installation
-------------
+## Installation
 
 The package is available on [Packagist](https://packagist.org/packages/arara/process).
 You can install it using [Composer](http://getcomposer.org).
@@ -22,8 +20,7 @@ composer require respect/config
 
 Works on PHP 5.3 and 5.4 only.
 
-Autoloading
------------
+## Autoloading
 
 You can set up Respect\Config for autoloading. We recommend using the
 SplClassLoader. Here's a nice sample:
@@ -36,8 +33,7 @@ $respectLoader->register();
 ````
 
 
-Running Tests
--------------
+## Running Tests
 
 We didn't created our tests just for us to apreciate. To run them,
 you'll need phpunit 3.5 or greater. Then, just chdir into the `/tests` folder
@@ -49,12 +45,10 @@ phpunit .
 ````
 
 You can tweak the phpunit.xml under that `/tests` folder to your needs.
-
-Feature Guide
+#
 =============
 
-Variable Expanding
-------------------
+## Variable Expanding
 
 myconfig.ini:
 
@@ -74,8 +68,7 @@ echo $c->db_dsn; //mysql:host=localhost;dbname=my_database
 
 Note that this works only for variables without ini [sections].
 
-Sequences
----------
+## Sequences
 
 myconfig.ini:
 
@@ -106,8 +99,7 @@ $c = new Container('myconfig.ini');
 print_r($c->allowed_users); //array('foo', 'bar', 'baz')
 ````
 
-Constant Evaluation
--------------------
+## Constant Evaluation
 
 myconfig.ini:
 
@@ -117,8 +109,7 @@ error_mode = PDO::ERRMODE_EXCEPTION
 
 Needless to say that this would work on sequences too.
 
-Instances
----------
+## Instances
 
 Using sections
 
@@ -150,8 +141,7 @@ $c = new Container('myconfig.ini');
 echo get_class($c->something); //DateTime
 ````
 
-Callbacks
----------
+## Callbacks
 
 myconfig.ini:
 
@@ -175,8 +165,7 @@ $c->connection = function() use($c) {
 echo get_class($c->connection); //PDO
 ````
 
-Instance Passing
-----------------
+## Instance Passing
 
 myconfig.ini:
 
@@ -198,8 +187,7 @@ echo get_class($c->myClass->myProperty); //DateTime
 
 Obviously, this works on sequences too.
 
-Instance Constructor Parameters
--------------------------------
+## Instance Constructor Parameters
 
 Parameter names by reflection:
 
@@ -229,8 +217,7 @@ myconfig.ini:
 connection PDO = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]
 ````
 
-Instantiation by Static Factory Methods
----------------------------------------
+## Instantiation by Static Factory Methods
 
 myconfig.ini:
 
@@ -239,8 +226,7 @@ myconfig.ini:
 createFromFormat[] = [Y-m-d H:i:s, 2000-01-01 00:00:01]
 ````
 
-Instance Method Calls
----------------------
+## Instance Method Calls
 
 myconfig.ini:
 
@@ -253,8 +239,7 @@ setAttribute    = [PDO::ATTR_ERRMODE, PDO::ATTR_EXCEPTION]
 exec[]          = "SET NAMES UTF-8"
 ````
 
-Instance Properties
--------------------
+## Instance Properties
 
 myconfig.ini:
 
@@ -263,8 +248,7 @@ myconfig.ini:
 foo = "bar"
 ````
 
-Known Limitations
-=================
+# Known Limitations
 
 * Variable expanding only works for unsectioned keys.
 * Empty strings, zeros and null are not properly treated yet.
@@ -279,7 +263,6 @@ Known Limitations
 Luckly, most of these limitations are known to be PHP bad practices. Keep up the
 good work and you'll never face them.
 
-License Information
-===================
+# License Information
 
 See [LICENSE](LICENSE) file.
