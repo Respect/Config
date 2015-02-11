@@ -121,6 +121,11 @@ class Instantiator
         $this->params[$name] = $value;
     }
 
+    public function getParams()
+    {
+        return $this->params;
+    }
+
     protected function cleanupParams(array $params)
     {
         while (null === end($params)) {
