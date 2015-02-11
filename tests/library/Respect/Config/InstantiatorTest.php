@@ -15,9 +15,10 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
 
     public function testConstructorParamNames()
     {
+        date_default_timezone_set('UTC');
         $i = new Instantiator('DateTime');
         $i->setParam('time', 'now');
-        $i->setParam('timezone', $tz = new \DateTimeZone('America/Sao_Paulo'));
+        $i->setParam('timezone', $tz = new \DateTimeZone('UTC'));
         $s = $i->getInstance();
         $this->assertEquals('DateTime', get_class($s));
         $this->assertEquals($tz, $s->getTimezone());

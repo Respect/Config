@@ -49,16 +49,6 @@ INI;
         $this->assertEquals('bat', $c->getItem('baz'));
     }
 
-    public function testLoadFileMultiple() {
-        $c = new Container('multiple');
-        $this->assertTrue(isset($c->foo));
-        $this->assertEquals('bar', $c->getItem('foo'));
-        $this->assertEquals('bat', $c->getItem('baz'));
-        $this->assertTrue(isset($c->panda));
-        $this->assertEquals('happy', $c->getItem('panda'));
-        $this->assertEquals('panda', $c->getItem('happy'));
-    }
-
     /**
      * @expectedException InvalidArgumentException
      * @expectedExceptionMessage Invalid input. Must be a valid file or array
@@ -258,7 +248,7 @@ respect_blah = ""
 INI;
         $c = new Container($ini);
         $c->panda = function() { return 'ok'; };
-        $this->assertEquals('ok', $c->getItem('panda', false));   
+        $this->assertEquals('ok', $c->getItem('panda', false));
     }
 
     public function testLazyLoadinessOnMultipleConfigLevels()
@@ -304,52 +294,24 @@ INI;
         $c->pdo = new \PDO('sqlite::memory:');
         $this->assertSame($c->pdo, $c->db->c);
     }
-    public function testDependencies()
+
+    public function testPascuttiTypeHintIssue40()
     {
-        $ini1 = <<<INI
-[bar stdClass]
-value = bar
-INI;
-        $ini2 = <<<INI
-[foo stdClass]
-bar = [bar]
-value = foo
+        $GLOBALS['_MERD_'] = false;
+        $ini = <<<INI
+[now DateTime]
+
+[typed Respect\Config\TypeHintWowMuchType]
+date = [now];
 INI;
         $c = new Container;
-        $c->loadStringMultiple(array($ini1, $ini2));
-        $this->assertEquals('bar', $c->foo->bar->value);
-        $c = new Container;
-        $c->loadStringMultiple(array($ini2, $ini1));
-        $this->assertEquals('bar', $c->foo->bar->value);
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertInstanceOf(
+            'Respect\Config\TypeHintWowMuchType',
+            $c->typed
+        );
     }
-    public function testDependenciesDeep()
-    {
-        $ini1 = <<<INI
-[bar stdClass]
-value = bar
-[bat stdClass]
-value = bat
-INI;
-        $ini2 = <<<INI
-[foo stdClass]
-bar = [bar]
-value = foo
-value2 = [bar]
-INI;
-        $ini3 = <<<INI
-[deep stdClass]
-value1 = [foo]
-INI;
-        $c = new Container;
-        $c->loadStringMultiple(array($ini1, $ini2, $ini3));
-        $this->assertEquals('bar', $c->foo->bar->value);
-        $this->assertEquals('foo', $c->deep->value1->value);
-        $c = new Container;
-        $c->loadStringMultiple(array($ini2, $ini3, $ini1));
-        $this->assertEquals('bar', $c->foo->bar->value);
-        $this->assertEquals('foo', $c->deep->value1->value);
-        $c = new Container;
-    }
+
     public function testLockedContainer()
     {
         $ini = <<<INI
@@ -457,4 +419,13 @@ class DatabaseWow {
         $this->c = $con;
     }
 }
+
+
+class TypeHintWowMuchType {
+    public $d;
+    public function __construct(\DateTime $date) {
+        $this->d = $date;
+    }
+}
+
 

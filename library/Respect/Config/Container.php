@@ -92,11 +92,7 @@ class Container extends ArrayObject
         }
 
         if (file_exists($configurator)) {
-            if (is_file($configurator)) {
-                return $this->loadFile($configurator);
-            } elseif (is_dir($configurator)) {
-                return $this->loadFileMultiple($configurator, scandir($configurator));
-            }
+            return $this->loadFile($configurator);
         }
 
         if (is_string($configurator)) {
@@ -131,54 +127,6 @@ class Container extends ArrayObject
         }
 
         return $this->loadArray($iniData);
-    }
-
-    public function loadFileMultiple($folder, array $configurators)
-    {
-        return $this->loadStringMultiple(
-            array_map(
-                'file_get_contents',
-                array_filter(
-                    array_map(
-                        function ($v) use ($folder) {
-                            return $folder.DIRECTORY_SEPARATOR.$v;
-                        },
-                        $configurators
-                    ),
-                    'is_file'
-                )
-            )
-        );
-    }
-
-    public function loadStringMultiple(array $configurators)
-    {
-        uasort($configurators, function ($first, $second) {
-            preg_match_all('#\[([^] ]+)\]#', $first, $usedOnFirst);
-            preg_match_all('#\[([^] ]+)\]#', $second, $usedOnSecond);
-            preg_match_all('#\[([^]]+) [^]]+\]#', $first, $declaredOnFirst);
-            preg_match_all('#\[([^]]+) [^]]+\]#', $second, $declaredOnSecond);
-
-            $usedOnFirst = array_unique($usedOnFirst[1]);
-            $usedOnSecond = array_unique($usedOnSecond[1]);
-            $declaredOnFirst = array_unique($declaredOnFirst[1]);
-            $declaredOnSecond = array_unique($declaredOnSecond[1]);
-
-            $usedByFirstDeclaredBySecond = array_intersect($usedOnFirst, $declaredOnSecond);
-            $usedBySecondDeclaredByFirst = array_intersect($usedOnSecond, $declaredOnFirst);
-
-            $usagesFirst = count($usedByFirstDeclaredBySecond);
-            $usagesSecond = count($usedBySecondDeclaredByFirst);
-
-            if ($usagesFirst == $usagesSecond) {
-                return 0;
-            } else {
-                return $usagesFirst < $usagesSecond ? -1 : 1;
-            }
-        });
-        foreach ($configurators as $c) {
-            $this->loadString($c);
-        }
     }
 
     public function loadFile($configurator)
@@ -292,15 +240,16 @@ class Container extends ArrayObject
 
     protected function parseValue($value)
     {
-        if (is_array($value)) {
+        if ($value instanceof Instantiator) {
+            return $value;
+        } elseif (is_array($value)) {
             return $this->parseSubValues($value);
         } elseif (empty($value)) {
-            return;
+            return null;
         } else {
             return $this->parseSingleValue($value);
         }
     }
-
     protected function hasCompleteBrackets($value)
     {
         return false !== strpos($value, '[') && false !== strpos($value, ']');
@@ -334,7 +283,7 @@ class Container extends ArrayObject
 
     protected function matchReference(&$value)
     {
-        if (preg_match('/^\[(\w+)+\]$/', $value, $match)) {
+        if (preg_match('/^\[([[:alnum:]\\\\]+)\]$/', $value, $match)) {
             return (boolean) ($value = $match[1]);
         }
     }

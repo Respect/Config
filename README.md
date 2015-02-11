@@ -6,12 +6,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/respect/config.svg?style=flat-square)](https://packagist.org/packages/respect/config)
 [![License](https://img.shields.io/packagist/l/respect/config.svg?style=flat-square)](https://packagist.org/packages/respect/config)
 
-A powerful, small, deadly simple configurator and dependency injection container made to be easy. Featuring:
-
-* INI configuration files only. Simpler than YAML, XML or JSON (see samples below).
-* Uses the same native, fast parser that powers php.ini.
-* Extends the INI configuration with a custom dialect.
-* Implements lazy loading for object instances.
+A tiny, fully featured dependency injection container as a DSL.
 
 ## Installation
 
@@ -22,11 +17,15 @@ You can install it using [Composer](http://getcomposer.org).
 composer require respect/config
 ```
 
-Works on PHP 5.3 and 5.4 only.
+## What is a DSL?
 
-# Feature Guide
+DSLs are Domain Specific Languages, small languages implemented for specific
+domains. Respect\Config is an **internal DSL** hosted on the INI format to
+hold dependency injection containers.
 
-## Variable Expanding
+## Feature Guide
+
+### Variable Expanding
 
 myconfig.ini:
 
@@ -46,7 +45,7 @@ echo $c->db_dsn; //mysql:host=localhost;dbname=my_database
 
 Note that this works only for variables without ini [sections].
 
-## Sequences
+### Sequences
 
 myconfig.ini:
 
@@ -77,7 +76,7 @@ $c = new Container('myconfig.ini');
 print_r($c->allowed_users); //array('foo', 'bar', 'baz')
 ````
 
-## Constant Evaluation
+### Constant Evaluation
 
 myconfig.ini:
 
@@ -87,7 +86,7 @@ error_mode = PDO::ERRMODE_EXCEPTION
 
 Needless to say that this would work on sequences too.
 
-## Instances
+### Instances
 
 Using sections
 
@@ -119,7 +118,7 @@ $c = new Container('myconfig.ini');
 echo get_class($c->something); //DateTime
 ````
 
-## Callbacks
+### Callbacks
 
 myconfig.ini:
 
@@ -143,7 +142,7 @@ $c->connection = function() use($c) {
 echo get_class($c->connection); //PDO
 ````
 
-## Instance Passing
+### Instance Passing
 
 myconfig.ini:
 
@@ -165,7 +164,7 @@ echo get_class($c->myClass->myProperty); //DateTime
 
 Obviously, this works on sequences too.
 
-## Instance Constructor Parameters
+### Instance Constructor Parameters
 
 Parameter names by reflection:
 
@@ -195,7 +194,7 @@ myconfig.ini:
 connection PDO = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]
 ````
 
-## Instantiation by Static Factory Methods
+### Instantiation by Static Factory Methods
 
 myconfig.ini:
 
@@ -204,7 +203,7 @@ myconfig.ini:
 createFromFormat[] = [Y-m-d H:i:s, 2000-01-01 00:00:01]
 ````
 
-## Instance Method Calls
+### Instance Method Calls
 
 myconfig.ini:
 
@@ -217,7 +216,7 @@ setAttribute    = [PDO::ATTR_ERRMODE, PDO::ATTR_EXCEPTION]
 exec[]          = "SET NAMES UTF-8"
 ````
 
-## Instance Properties
+### Instance Properties
 
 myconfig.ini:
 
@@ -225,22 +224,3 @@ myconfig.ini:
 [something stdClass]
 foo = "bar"
 ````
-
-# Known Limitations
-
-* Variable expanding only works for unsectioned keys.
-* Empty strings, zeros and null are not properly treated yet.
-* Constructors with non-null default parameter values may not work properly yet.
-* The only way to use magic methods is to call them explicitly with __call
-* Circular references haven't been tested and may not work
-* May not work properly with the following conditions:
-    * Static and normal methods with the same names within the same class
-    * Methods and properties with same names within the same class
-    * Methods and properties with same names as constructor parameters
-
-Luckly, most of these limitations are known to be PHP bad practices. Keep up the
-good work and you'll never face them.
-
-# License Information
-
-See [LICENSE](LICENSE) file.
