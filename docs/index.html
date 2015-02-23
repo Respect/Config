@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Respect\Config</title>
+
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+        <link rel="stylesheet" href="http://respect.github.io/Config/css/main.css">
+    </head>
+    <body>
+
+        <header class="navbar navbar-default navbar-fixed-top">
+
+            <a class="navbar-brand" href="http://respect.github.io/Config/">
+                Respect\Config
+                <small class="hidden-xs hidden-sm">
+                    A powerful, small, deadly simple configurator and dependency injection container DSL made to be easy.
+                </small>
+            </a>
+
+                            <a href="https://github.com/Respect/Config">
+                    <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
+                </a>
+            
+        </header>
+
+        <main class="container-fluid">
+            <div class="row">
+                                    <nav id="sidebar" class="col-sm-3 col-lg-2" role="navigation">
+
+                        
+                            
+                            <ul class="nav nav-pills nav-stacked">
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Config/">
+                                            Home
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Config/contributing.html">
+                                            Contributing
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Config/docs/">
+                                            Feature Guide
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Config/docs/install.html">
+                                            Installation
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Config/license.html">
+                                            License
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Config/docs/dsl.html">
+                                            What is a DSL?
+                                        </a>
+                                    </li>
+                                                            </ul>
+
+                        
+                    </nav>
+                
+                <section class="col-sm-offset-3 col-lg-offset-2 col-sm-9 col-lg-10">
+                    <h1>Feature Guide</h1>
+<h2>Variable Expanding</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">db_driver = "mysql"
+db_host   = "localhost"
+db_name   = "my_database"
+db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+echo $c-&gt;db_dsn; //mysql:host=localhost;dbname=my_database</code></pre>
+<p>Note that this works only for variables without ini [sections].</p>
+<h2>Sequences</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">allowed_users = [foo,bar,baz]</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+print_r($c-&gt;allowed_users); //array('foo', 'bar', 'baz')</code></pre>
+<p>Variable expanding also works on sequences. You can express something like this:</p>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">admin_user = foo
+allowed_users = [[admin_user],bar,baz]</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+print_r($c-&gt;allowed_users); //array('foo', 'bar', 'baz')</code></pre>
+<h2>Constant Evaluation</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">error_mode = PDO::ERRMODE_EXCEPTION</code></pre>
+<p>Needless to say that this would work on sequences too.</p>
+<h2>Instances</h2>
+<p>Using sections</p>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[something stdClass]</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+echo get_class($c-&gt;something); //stdClass</code></pre>
+<p>Using names</p>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">date DateTime = now</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+echo get_class($c-&gt;something); //DateTime</code></pre>
+<h2>Callbacks</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">db_driver = "mysql"
+db_host   = "localhost"
+db_name   = "my_database"
+db_user   = "my_user"
+db_pass   = "my_pass"
+db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+$c-&gt;connection = function() use($c) {
+    return new PDO($c-&gt;db_dsn, $c-&gt;db_user, $c-&gt;db_pass);
+};
+echo get_class($c-&gt;connection); //PDO</code></pre>
+<h2>Instance Passing</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[myClass DateTime]
+
+[anotherClass stdClass]
+myProperty = [myClass]</code></pre>
+<p>myapp.php:</p>
+<pre><code class="language-php">$c = new Container('myconfig.ini');
+echo get_class($c-&gt;myClass); //DateTime
+echo get_class($c-&gt;anotherClass); //stdClass
+echo get_class($c-&gt;myClass-&gt;myProperty); //DateTime</code></pre>
+<p>Obviously, this works on sequences too.</p>
+<h2>Instance Constructor Parameters</h2>
+<p>Parameter names by reflection:</p>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[connection PDO]
+dsn      = "mysql:host=localhost;dbname=my_database"
+username = "my_user"
+password = "my_pass"</code></pre>
+<p>Method call by sequence:</p>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[connection PDO]
+__construct = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]</code></pre>
+<p>Using Names and Sequences:</p>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">connection PDO = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]</code></pre>
+<h2>Instantiation by Static Factory Methods</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[y2k DateTime]
+createFromFormat[] = [Y-m-d H:i:s, 2000-01-01 00:00:01]</code></pre>
+<h2>Instance Method Calls</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[connection PDO]
+dsn             = "mysql:host=localhost;dbname=my_database"
+username        = "my_user"
+password        = "my_pass"
+setAttribute    = [PDO::ATTR_ERRMODE, PDO::ATTR_EXCEPTION]
+exec[]          = "SET NAMES UTF-8"</code></pre>
+<h2>Instance Properties</h2>
+<p>myconfig.ini:</p>
+<pre><code class="language-ini">[something stdClass]
+foo = "bar"</code></pre>
+<hr />
+<p>See also:</p>
+<ul>
+<li><a href="../index.html">Home</a></li>
+<li><a href="../contributing.html">Contributing</a></li>
+<li><a href="install.html">Installation</a></li>
+<li><a href="../license.html">License</a></li>
+<li><a href="dsl.html">What is a DSL?</a></li>
+</ul>
+                    <div id="go-top">
+                        <hr />
+                        <p>
+                            <a class="btn btn-primary btn-sm" href="#" role="button">
+                                <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                            </a>
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+
+        <script>
+            $(function() {
+                hljs.initHighlightingOnLoad();
+
+                var top = $('#go-top');
+
+                $(window).scroll(function() {
+                    if($(window).scrollTop() + $(window).height() <= $(document).height() - 100) {
+                        return;
+                    }
+
+                    top.fadeIn();
+                });
+            });
+
+            
+                (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+                ga('create', 'UA-59839366-1', 'auto');
+                ga('send', 'pageview');
+
+            
+        </script>
+    </body>
+</html>
