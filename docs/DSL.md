@@ -8,6 +8,7 @@ hold dependency injection containers.
 
 See also:
 
+- [Home](../README.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Feature Guide](README.md)
 - [Installation](INSTALL.md)

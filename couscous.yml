@@ -1,0 +1,45 @@
+template:
+    url: https://github.com/Respect/RespectCouscous
+
+exclude:
+    - .scrutinizer.yml
+    - .travis.yml
+    - composer.json
+    - library
+    - phpunit.xml.dist
+    - tests
+    - vendor
+
+baseUrl: http://respect.github.io/Config
+
+github:
+    user: Respect
+    repo: Config
+
+title: Respect\Config
+subTitle: A powerful, small, deadly simple configurator and dependency injection container DSL made to be easy.
+
+gaTrackingId: UA-59839366-1
+
+menu:
+    sections:
+        main:
+            items:
+                home:
+                    text: Home
+                    relativeUrl: /
+                contributing:
+                    text: Contributing
+                    relativeUrl: /contributing.html
+                featureguide:
+                    text: Feature Guide
+                    relativeUrl: /docs/
+                installation:
+                    text: Installation
+                    relativeUrl: /docs/install.html
+                license:
+                    text: License
+                    relativeUrl: /license.html
+                validators:
+                    text: What is a DSL?
+                    relativeUrl: /docs/dsl.html

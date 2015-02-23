@@ -204,6 +204,7 @@ foo = "bar"
 
 See also:
 
+- [Home](../README.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Installation](INSTALL.md)
 - [License](../LICENSE.md)

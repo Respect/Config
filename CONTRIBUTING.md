@@ -57,6 +57,7 @@ when you send us a pull request, be sure you are following them.
 
 See also:
 
+- [Home](README.md)
 - [Feature Guide](docs/README.md)
 - [Installation](docs/INSTALL.md)
 - [License](LICENSE.md)

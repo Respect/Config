@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 See also:
 
+- [Home](README.md)
 - [Contributing](CONTRIBUTING.md)
 - [Feature Guide](docs/README.md)
 - [Installation](docs/INSTALL.md)

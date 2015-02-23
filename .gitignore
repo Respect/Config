@@ -1,3 +1,4 @@
+.couscous
 *.lock
 Makefile
 phpunit.xml
