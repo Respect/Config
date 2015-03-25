@@ -267,7 +267,7 @@ class Container extends ArrayObject
 
     protected function parseConstants($value)
     {
-        if (preg_match('/^[A-Z_]+([:]{2}[A-Z_]+)?$/', $value) && defined($value)) {
+        if (preg_match('/^[\\a-zA-Z_]+([:]{2}[A-Z_]+)?$/', $value) && defined($value)) {
             return constant($value);
         } else {
             return $value;
