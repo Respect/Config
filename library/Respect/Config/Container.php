@@ -283,7 +283,7 @@ class Container extends ArrayObject
 
     protected function matchReference(&$value)
     {
-        if (preg_match('/^\[([[:alnum:]\\\\]+)\]$/', $value, $match)) {
+        if (preg_match('/^\[([[:alnum:]_\\\\]+)\]$/', $value, $match)) {
             return (boolean) ($value = $match[1]);
         }
     }
