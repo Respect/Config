@@ -393,6 +393,28 @@ INI;
         $this->assertInstanceOf('DateTime', $result);
     }
 
+
+    public function testClassConstants()
+    {
+        $ini = <<<INI
+foo = \Respect\Config\TestConstant::CONS_TEST
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertEquals(\Respect\Config\TestConstant::CONS_TEST, $c->foo);
+    }
+
+    public function testClassConstantsAnotherNamespace()
+    {
+        class_alias('Respect\Config\TestConstant', 'Respect\Test\Another\Cons');
+        $ini = <<<INI
+foo = \Respect\Test\Another\Cons::CONS_TEST
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertEquals(\Respect\Test\Another\Cons::CONS_TEST, $c->foo);
+    }
+
 }
 class Bar {}
 class Foo
@@ -426,6 +448,10 @@ class TypeHintWowMuchType {
     public function __construct(\DateTime $date) {
         $this->d = $date;
     }
+}
+
+class TestConstant {
+    const CONS_TEST = "XPTO";
 }
 
 
