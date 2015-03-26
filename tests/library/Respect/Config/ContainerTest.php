@@ -415,6 +415,31 @@ INI;
         $this->assertEquals(\Respect\Test\Another\Cons::CONS_TEST, $c->foo);
     }
 
+
+    public function testInstantiatorWithUnderline()
+    {
+        $ini = <<<INI
+[foo_bar stdClass]
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $instantiator = $c->getItem('foo_bar', true);
+        $this->assertEquals('stdClass', $instantiator->getClassName());
+    }
+
+    public function testClassWithAnotherAndUnderline()
+    {
+        $ini = <<<INI
+[foo_bar stdClass]
+
+[bar_foo \Respect\Config\WheneverWithAProperty]
+test = [foo_bar]
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertEquals(get_class($c->foo_bar), get_class($c->bar_foo->test));
+    }
+
 }
 class Bar {}
 class Foo
@@ -455,3 +480,8 @@ class TestConstant {
 }
 
 
+class WheneverWithAProperty
+{
+    public $test;
+    
+}
