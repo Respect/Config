@@ -48,6 +48,33 @@ INI;
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
+    
+    public function testContainerInterop()
+    {
+        $ini = <<<INI
+foo = bar
+baz = bat
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $this->assertTrue($c->has('foo'));
+        $this->assertEquals('bar', $c->get('foo'));
+        $this->assertEquals('bat', $c->get('baz'));
+    }
+    
+    /**
+     * @expectedException Interop\Container\Exception\NotFoundException
+     * @expectedExceptionMessage Item baz not found
+     */
+    public function testLoadInvalidName()
+    {
+        $ini = <<<INI
+foo = bar
+INI;
+        $c = new Container;
+        $c->loadArray(parse_ini_string($ini, true));
+        $c->get('baz');
+    }
 
     /**
      * @expectedException InvalidArgumentException

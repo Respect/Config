@@ -6,8 +6,9 @@ use InvalidArgumentException as Argument;
 use ArrayObject;
 use ReflectionClass;
 use ReflectionFunction;
+use Interop\Container\ContainerInterface;
 
-class Container extends ArrayObject
+class Container extends ArrayObject implements ContainerInterface
 {
     protected $configurator;
 
@@ -17,6 +18,11 @@ class Container extends ArrayObject
     }
 
     public function __isset($name)
+    {
+        return $this->has($name);
+    }
+    
+    public function has($name) 
     {
         if ($this->configurator) {
             $this->configure();
@@ -101,7 +107,7 @@ class Container extends ArrayObject
 
         throw new Argument("Invalid input. Must be a valid file or array");
     }
-
+    
     public function getItem($name, $raw = false)
     {
         if ($this->configurator) {
@@ -109,7 +115,7 @@ class Container extends ArrayObject
         }
 
         if (!isset($this[$name])) {
-            throw new Argument("Item $name not found");
+            throw new NotFoundException("Item $name not found");
         }
 
         if ($raw || !is_callable($this[$name])) {
@@ -117,6 +123,11 @@ class Container extends ArrayObject
         }
 
         return $this->lazyLoad($name);
+    }
+    
+    public function get($name)
+    {
+        return $this->getItem($name);
     }
 
     public function loadString($configurator)
