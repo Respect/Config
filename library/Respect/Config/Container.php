@@ -2,11 +2,11 @@
 
 namespace Respect\Config;
 
-use InvalidArgumentException as Argument;
+use Respect\Config\InvalidArgumentException as Argument;
 use ArrayObject;
 use ReflectionClass;
 use ReflectionFunction;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 
 class Container extends ArrayObject implements ContainerInterface
 {

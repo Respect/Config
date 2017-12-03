@@ -2,8 +2,9 @@
 
 namespace Respect\Config;
 
-use Interop\Container\Exception\NotFoundException as BaseNotFoundException;
+use Psr\Container as Interop;
 
-class NotFoundException extends \Exception implements BaseNotFoundException
+class NotFoundException extends InvalidArgumentException implements Interop\NotFoundExceptionInterface
 {
 }
+

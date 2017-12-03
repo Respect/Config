@@ -9,8 +9,11 @@
          syntaxCheck="false"
          verbose="false">
     <testsuites>
-        <testsuite>
-            <directory suffix="Test.php">tests</directory>
+        <testsuite name="library">
+            <directory suffix="Test.php">tests/library</directory>
+        </testsuite>
+        <testsuite name="feature">
+            <directory suffix=".php">tests/feature</directory>
         </testsuite>
     </testsuites>
     <filter>
