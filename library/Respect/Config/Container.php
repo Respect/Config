@@ -21,12 +21,10 @@ class Container extends ArrayObject implements ContainerInterface
     {
         return $this->has($name);
     }
-    
-    public function has($name) 
+
+    public function has($name)
     {
-        if ($this->configurator) {
-            $this->configure();
-        }
+        $this->configure();
 
         return parent::offsetExists($name);
     }
@@ -70,9 +68,7 @@ class Container extends ArrayObject implements ContainerInterface
             parent::offsetSet($name, $item);
         }
 
-        if ($this->configurator) {
-            $this->configure();
-        }
+        $this->configure();
 
         return $this;
     }
@@ -107,12 +103,10 @@ class Container extends ArrayObject implements ContainerInterface
 
         throw new Argument("Invalid input. Must be a valid file or array");
     }
-    
+
     public function getItem($name, $raw = false)
     {
-        if ($this->configurator) {
-            $this->configure();
-        }
+        $this->configure();
 
         if (!isset($this[$name])) {
             throw new NotFoundException("Item $name not found");
@@ -124,7 +118,7 @@ class Container extends ArrayObject implements ContainerInterface
 
         return $this->lazyLoad($name);
     }
-    
+
     public function get($name)
     {
         return $this->getItem($name);
@@ -132,6 +126,7 @@ class Container extends ArrayObject implements ContainerInterface
 
     public function loadString($configurator)
     {
+        $configurator = preg_replace('/^[\s\t]+/', '', $configurator);
         $iniData = parse_ini_string($configurator, true);
         if (false === $iniData || count($iniData) == 0) {
             throw new Argument("Invalid configuration string");
@@ -268,6 +263,10 @@ class Container extends ArrayObject implements ContainerInterface
 
     protected function parseSingleValue($value)
     {
+        if (is_object($value)) {
+            return $value;
+        }
+
         $value = trim($value);
         if ($this->hasCompleteBrackets($value)) {
             return $this->parseBrackets($value);
