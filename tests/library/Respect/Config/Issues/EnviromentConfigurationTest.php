@@ -1,7 +1,7 @@
 <?php
 namespace Respect\Config;
 
-class EnviromentConfigurationTest extends \PHPUnit_Framework_TestCase
+class EnviromentConfigurationTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @group   issues

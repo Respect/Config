@@ -25,6 +25,7 @@ class Instantiator
             list($mode, $className) = explode(' ', $className, 2);
             $this->mode = $mode;
         }
+
         $this->reflection = new ReflectionClass($className);
         $this->constructor = $this->findConstructorParams($this->reflection);
         $this->className = $className;

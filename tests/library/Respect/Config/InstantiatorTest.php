@@ -2,7 +2,7 @@
 
 namespace Respect\Config;
 
-class InstantiatorTest extends \PHPUnit_Framework_TestCase
+class InstantiatorTest extends \PHPUnit\Framework\TestCase
 {
 
     public function testStaticMethodConstructor()
@@ -17,7 +17,7 @@ class InstantiatorTest extends \PHPUnit_Framework_TestCase
     {
         date_default_timezone_set('UTC');
         $i = new Instantiator('DateTime');
-        $i->setParam('time', 'now');
+        $i->setParam('datetime', 'now');
         $i->setParam('timezone', $tz = new \DateTimeZone('UTC'));
         $s = $i->getInstance();
         $this->assertEquals('DateTime', get_class($s));

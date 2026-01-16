@@ -6,7 +6,7 @@ use InvalidArgumentException as Argument;
 use ArrayObject;
 use ReflectionClass;
 use ReflectionFunction;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 
 class Container extends ArrayObject implements ContainerInterface
 {
@@ -22,13 +22,13 @@ class Container extends ArrayObject implements ContainerInterface
         return $this->has($name);
     }
     
-    public function has($name) 
+    public function has(string $id): bool
     {
         if ($this->configurator) {
             $this->configure();
         }
 
-        return parent::offsetExists($name);
+        return parent::offsetExists($id);
     }
 
     public function __invoke($spec)
@@ -46,7 +46,7 @@ class Container extends ArrayObject implements ContainerInterface
             $container = $this;
             $arguments = array_map(
                 function ($param) use ($container) {
-                    if ($paramClass = $param->getClass()) {
+                    if ($paramClass = $param->getType()) {
                         $paramClassName = $paramClass->getName();
 
                         return $container->getItem($paramClassName);
@@ -125,9 +125,9 @@ class Container extends ArrayObject implements ContainerInterface
         return $this->lazyLoad($name);
     }
     
-    public function get($name)
+    public function get(string $id)
     {
-        return $this->getItem($name);
+        return $this->getItem($id);
     }
 
     public function loadString($configurator)
@@ -288,14 +288,14 @@ class Container extends ArrayObject implements ContainerInterface
     protected function matchSequence(&$value)
     {
         if (preg_match('/^\[(.*?,.*?)\]$/', $value, $match)) {
-            return (boolean) ($value = $match[1]);
+            return (bool) ($value = $match[1]);
         }
     }
 
     protected function matchReference(&$value)
     {
         if (preg_match('/^\[([[:alnum:]_\\\\]+)\]$/', $value, $match)) {
-            return (boolean) ($value = $match[1]);
+            return (bool) ($value = $match[1]);
         }
     }
 

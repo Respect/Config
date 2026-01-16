@@ -1,7 +1,7 @@
 <?php
 namespace Respect\Config;
 
-class StaticFactoryTest extends \PHPUnit_Framework_TestCase
+class StaticFactoryTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @group issues
@@ -11,7 +11,9 @@ class StaticFactoryTest extends \PHPUnit_Framework_TestCase
     {
         $i = new Instantiator(__NAMESPACE__.'\\StaticTest');
         $i->setParam('factory', array(array()));
-        $this->assertAttributeNotEmpty('staticMethodCalls', $i);
+        $ref = new \ReflectionObject($i);
+        $prop = $ref->getProperty('staticMethodCalls');
+        $this->assertNotEmpty($prop->getValue($i));
         $this->assertInstanceOf('DateTime', $i->getInstance());
     }
 }

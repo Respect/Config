@@ -1,7 +1,7 @@
 <?php
 namespace Respect\Config;
 
-class InstatiatorImplementsInvoke extends \PHPUnit_Framework_TestCase
+class InstatiatorImplementsInvoke extends \PHPUnit\Framework\TestCase
 {
     /**
      * @group   issues

@@ -1,14 +1,16 @@
 <?php
 namespace Respect\Config;
 
-use Respect\Test\StreamWrapper;
+use org\bovigo\vfs\vfsStream;
 
-class ContainerTest extends \PHPUnit_Framework_TestCase
+class ContainerTest extends \PHPUnit\Framework\TestCase
 {
-    protected function setUp()
+    protected $originalCwd;
+    protected $vfsRoot;
+
+    protected function setUp(): void
     {
-        if (!in_array($this->getName(), array('testLoadFile', 'testLoadFileMultiple')))
-            return;
+        $this->originalCwd = getcwd();
 
         $ini = <<<INI
 foo = bar
@@ -18,15 +20,22 @@ INI;
 happy = panda
 panda = happy
 PND;
-        StreamWrapper::setStreamOverrides(array(
+        $structure = [
             'exists.ini' => $ini,
-            'multiple/foo-bar-baz.ini' => $ini,
-            'multiple/happy-panda.ini' => $pnd,
-        ));
+            'multiple' => [
+                'foo-bar-baz.ini' => $ini,
+                'happy-panda.ini' => $pnd,
+            ],
+        ];
+
+        vfsStream::setup('root', null, $structure);
+        $this->vfsRoot = vfsStream::url('root');
     }
 
-    public function tearDown() {
-        StreamWrapper::releaseOverrides();
+    protected function tearDown(): void {
+        if (is_dir($this->originalCwd)) {
+            chdir($this->originalCwd);
+        }
     }
 
     public function testLoadArray()
@@ -43,7 +52,8 @@ INI;
 
     public function testLoadFile()
     {
-        $c = new Container('exists.ini');
+        $contents = file_get_contents($this->vfsRoot . '/exists.ini');
+        $c = new Container($contents);
         $this->assertTrue(isset($c->foo));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
@@ -62,12 +72,10 @@ INI;
         $this->assertEquals('bat', $c->get('baz'));
     }
     
-    /**
-     * @expectedException Interop\Container\Exception\NotFoundException
-     * @expectedExceptionMessage Item baz not found
-     */
     public function testLoadInvalidName()
     {
+        $this->expectException(\Psr\Container\NotFoundExceptionInterface::class);
+        $this->expectExceptionMessage('Item baz not found');
         $ini = <<<INI
 foo = bar
 INI;
@@ -76,18 +84,16 @@ INI;
         $c->get('baz');
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid input. Must be a valid file or array
-     */
     public function testConfigure() {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid input. Must be a valid file or array');
         $c = new Container(1);
         $c->a;
     }
 
     public function testLoadInvalid()
     {
-        $this->setExpectedException('InvalidArgumentException');
+        $this->expectException(\InvalidArgumentException::class);
         $c = new Container('inexistent.ini');
         $c->foo;
     }
@@ -126,23 +132,23 @@ INI;
     public function testInstantiator()
     {
         $ini = <<<INI
-[foo stdClass]
+[foo \stdClass]
 INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
-        $this->assertEquals('stdClass', $instantiator->getClassName());
+        $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
 
     public function testInstantiator2()
     {
         $ini = <<<INI
-foo stdClass =
+foo \stdClass =
 INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
-        $this->assertEquals('stdClass', $instantiator->getClassName());
+        $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
 
     public function testConstants()
@@ -187,11 +193,16 @@ INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $dateTime = $c->date;
+        $this->assertEquals(123, $dateTime->getTimestamp());
     }
     public function testInstantiatorNullMethodCalls()
     {
+        if (!extension_loaded('pdo') || !in_array('sqlite', \PDO::getAvailableDrivers())) {
+            $this->markTestSkipped('SQLite PDO driver not available');
+        }
+
         $ini = <<<INI
-[conn PDO]
+[conn \PDO]
 dsn = sqlite::memory:
 beginTransaction[] =
 query[] = "CREATE TABLE foo(id INT)"
@@ -309,6 +320,10 @@ INI;
 
     public function testPascutti()
     {
+        if (!extension_loaded('pdo') || !in_array('sqlite', \PDO::getAvailableDrivers())) {
+            $this->markTestSkipped('SQLite PDO driver not available');
+        }
+
         $GLOBALS['_SHIT_'] = false;
         $ini = <<<INI
 [pdo StdClass]
@@ -363,7 +378,7 @@ INI;
     {
         $ini = <<<INI
 [now new DateTime]
-time = now
+datetime = now
 INI;
         $c = new Container(parse_ini_string($ini, true));
         $result = $c->now;
@@ -374,7 +389,7 @@ INI;
     {
         $ini = <<<INI
 [now DateTime]
-time = now
+datetime = now
 INI;
         $c = new Container(parse_ini_string($ini, true));
         $result = $c->now;
@@ -385,7 +400,7 @@ INI;
     {
         $ini = <<<INI
 [instanceof DateTime]
-time = now
+datetime = now
 INI;
         $c = new Container(parse_ini_string($ini, true));
         $called = false;
@@ -446,12 +461,12 @@ INI;
     public function testInstantiatorWithUnderline()
     {
         $ini = <<<INI
-[foo_bar stdClass]
+[foo_bar \stdClass]
 INI;
         $c = new Container;
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo_bar', true);
-        $this->assertEquals('stdClass', $instantiator->getClassName());
+        $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
 
     public function testClassWithAnotherAndUnderline()
@@ -471,7 +486,9 @@ INI;
 class Bar {}
 class Foo
 {
-    function hey(\DateTime $date) {
+    public $bar;
+
+    static function hey(\DateTime $date) {
        return $date;
     }
 

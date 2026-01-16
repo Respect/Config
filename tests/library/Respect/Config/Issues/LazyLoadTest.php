@@ -1,7 +1,7 @@
 <?php
 namespace Respect\Config;
 
-class LazyLoadTest extends \PHPUnit_Framework_TestCase
+class LazyLoadTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @group   issues
