@@ -11,7 +11,6 @@ use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\NotFoundExceptionInterface;
-use Respect\Test\Another\Cons;
 
 use function chdir;
 use function class_alias;
@@ -37,7 +36,9 @@ final class ContainerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->originalCwd = getcwd();
+        $cwd = getcwd();
+        self::assertIsString($cwd);
+        $this->originalCwd = $cwd;
 
         $ini = <<<'INI'
 foo = bar
@@ -65,8 +66,8 @@ PND;
 foo = bar
 baz = bat
 INI;
-        $c = new Container(parse_ini_string($ini, true));
-        $this->assertTrue(isset($c->foo));
+        $c = new Container(self::parseIni($ini));
+        $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
@@ -75,7 +76,7 @@ INI;
     {
         $contents = file_get_contents($this->vfsRoot . '/exists.ini');
         $c = new Container($contents);
-        $this->assertTrue(isset($c->foo));
+        $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
@@ -87,7 +88,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->get('foo'));
         $this->assertEquals('bat', $c->get('baz'));
@@ -101,7 +102,7 @@ INI;
 foo = bar
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $c->get('baz');
     }
 
@@ -110,14 +111,14 @@ INI;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid input. Must be a valid file or array');
         $c = new Container(1);
-        $c->a;
+        $c->get('a');
     }
 
     public function testLoadInvalid(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $c = new Container('inexistent.ini');
-        $c->foo;
+        $c->get('foo');
     }
 
     public function testLoadArraySections(): void
@@ -128,7 +129,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $d = $c->getItem('sec');
         $this->assertEquals('bar', $d['foo']);
         $this->assertEquals('bat', $d['baz']);
@@ -145,7 +146,7 @@ db_pass   = ""
 db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $this->assertEquals(
             'mysql:host=localhost;dbname=my_database',
             $c->getItem('db_dsn'),
@@ -158,7 +159,7 @@ INI;
 [foo \stdClass]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
@@ -169,7 +170,7 @@ INI;
 foo \stdClass =
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
@@ -185,13 +186,13 @@ lorem = ["foo"DIRECTORY_SEPARATOR"bar", PATH_SEPARATOR]
 ipsum = [PATH_SEPARATOR, "foo"DIRECTORY_SEPARATOR"bar"]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $this->assertEquals(E_USER_ERROR, $c->foo);
-        $this->assertEquals(PDO::ATTR_ERRMODE, $c->bar);
-        $this->assertEquals([E_USER_ERROR, E_USER_WARNING], $c->faa);
-        $this->assertEquals([PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION], $c->bor);
-        $this->assertEquals(['foo' . DIRECTORY_SEPARATOR . 'bar', PATH_SEPARATOR], $c->lorem);
-        $this->assertEquals([PATH_SEPARATOR, 'foo' . DIRECTORY_SEPARATOR . 'bar'], $c->ipsum);
+        $c->loadArray(self::parseIni($ini));
+        $this->assertEquals(E_USER_ERROR, $c->getItem('foo'));
+        $this->assertEquals(PDO::ATTR_ERRMODE, $c->getItem('bar'));
+        $this->assertEquals([E_USER_ERROR, E_USER_WARNING], $c->getItem('faa'));
+        $this->assertEquals([PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION], $c->getItem('bor'));
+        $this->assertEquals(['foo' . DIRECTORY_SEPARATOR . 'bar', PATH_SEPARATOR], $c->getItem('lorem'));
+        $this->assertEquals([PATH_SEPARATOR, 'foo' . DIRECTORY_SEPARATOR . 'bar'], $c->getItem('ipsum'));
     }
 
     public function testInstantiatorParams(): void
@@ -202,7 +203,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('bar', $instantiator->getParam('foo'));
         $this->assertEquals('bat', $instantiator->getParam('baz'));
@@ -215,8 +216,8 @@ INI;
 setTimestamp[] = 123
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $dateTime = $c->date;
+        $c->loadArray(self::parseIni($ini));
+        $dateTime = $c->getItem('date');
         $this->assertEquals(123, $dateTime->getTimestamp());
     }
 
@@ -234,8 +235,8 @@ query[] = "CREATE TABLE foo(id INT)"
 commit[] =
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $conn = $c->conn;
+        $c->loadArray(self::parseIni($ini));
+        $conn = $c->getItem('conn');
         $this->assertNotEmpty($conn->query('SELECT * FROM sqlite_master')->fetch());
     }
 
@@ -247,7 +248,7 @@ foo[abc] = bar
 foo[def] = bat
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $expected = [
             'abc' => 'bar',
@@ -265,7 +266,7 @@ foo[def] = bat
 baz = [bat, blz]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $expectedFoo = [
             'abc' => ['bat', 'blz'],
@@ -287,7 +288,7 @@ baz = [bat, [hi]]
 barr = [bat, [hi]]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $expectedFoo = [
             'abc' => ['bat', 'blz'],
@@ -301,7 +302,7 @@ INI;
     public function testGetItemLazyLoad(): void
     {
         $c = new Container();
-        $c->foo = static function () {
+        $c['foo'] = static function () {
             return 'ok';
         };
         $this->assertEquals('ok', $c->getItem('foo', false));
@@ -313,7 +314,7 @@ INI;
 respect_blah = ""
 INI;
         $c = new Container($ini);
-        $c->panda = static function () {
+        $c['panda'] = static function () {
             return 'ok';
         };
         $this->assertEquals('ok', $c->getItem('panda', false));
@@ -331,7 +332,7 @@ child = [foo]
 child = [bar]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $this->assertFalse($GLOBALS['_SHIT_']);
         $GLOBALS['_SHIT_'] = false;
     }
@@ -344,8 +345,9 @@ INI;
 hello[] = ["opa", [bar]]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $this->assertInstanceOf(Bar::class, $c->foo->bar);
+        $c->loadArray(self::parseIni($ini));
+        $foo = $c->getItem('foo');
+        $this->assertInstanceOf(Bar::class, $foo->bar);
     }
 
     public function testPascutti(): void
@@ -362,9 +364,10 @@ INI;
 con = [pdo];
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
+        // __set replaces the Instantiator's pending instance
         $c->pdo = new PDO('sqlite::memory:');
-        $this->assertSame($c->pdo, $c->db->c);
+        $this->assertSame($c->getItem('pdo'), $c->getItem('db')->c);
     }
 
     public function testPascuttiTypeHintIssue40(): void
@@ -377,10 +380,10 @@ INI;
 date = [now];
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $this->assertInstanceOf(
             TypeHintWowMuchType::class,
-            $c->typed,
+            $c->getItem('typed'),
         );
     }
 
@@ -390,9 +393,9 @@ INI;
 foo = [undef]
 bar = [foo]
 INI;
-        $c = new Container(parse_ini_string($ini, true));
+        $c = new Container(self::parseIni($ini));
         $result = $c(['undef' => 'Hello']);
-        $this->assertEquals('Hello', $result->bar);
+        $this->assertEquals('Hello', $result->getItem('bar'));
     }
 
     public function testLockedContainer2(): void
@@ -401,8 +404,9 @@ INI;
 foo = [undef]
 bar = [foo]
 INI;
-        $c = new Container(parse_ini_string($ini, true));
-        $result = $c->bar(['undef' => 'Hello']);
+        $c = new Container(self::parseIni($ini));
+        $c(['undef' => 'Hello']);
+        $result = $c->getItem('bar');
         $this->assertEquals('Hello', $result);
     }
 
@@ -412,9 +416,9 @@ INI;
 [now new DateTime]
 datetime = now
 INI;
-        $c = new Container(parse_ini_string($ini, true));
-        $result = $c->now;
-        $result2 = $c->now;
+        $c = new Container(self::parseIni($ini));
+        $result = $c->getItem('now');
+        $result2 = $c->getItem('now');
         $this->assertNotSame($result, $result2);
     }
 
@@ -424,9 +428,9 @@ INI;
 [now DateTime]
 datetime = now
 INI;
-        $c = new Container(parse_ini_string($ini, true));
-        $result = $c->now;
-        $result2 = $c->now;
+        $c = new Container(self::parseIni($ini));
+        $result = $c->getItem('now');
+        $result2 = $c->getItem('now');
         $this->assertSame($result, $result2);
     }
 
@@ -436,7 +440,7 @@ INI;
 [instanceof DateTime]
 datetime = now
 INI;
-        $c = new Container(parse_ini_string($ini, true));
+        $c = new Container(self::parseIni($ini));
         $called = false;
         $result = $c(static function (DateTime $date) use (&$called) {
             $called = true;
@@ -479,8 +483,8 @@ INI;
 foo = \Respect\Config\TestConstant::CONS_TEST
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $this->assertEquals(TestConstant::CONS_TEST, $c->foo);
+        $c->loadArray(self::parseIni($ini));
+        $this->assertEquals(TestConstant::CONS_TEST, $c->getItem('foo'));
     }
 
     public function testClassConstantsAnotherNamespace(): void
@@ -490,8 +494,9 @@ INI;
 foo = \Respect\Test\Another\Cons::CONS_TEST
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $this->assertEquals(Cons::CONS_TEST, $c->foo);
+        $c->loadArray(self::parseIni($ini));
+        // The container resolves the aliased constant at runtime
+        $this->assertEquals(TestConstant::CONS_TEST, $c->getItem('foo'));
     }
 
     public function testInstantiatorWithUnderline(): void
@@ -500,7 +505,7 @@ INI;
 [foo_bar \stdClass]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
+        $c->loadArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo_bar', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
@@ -514,8 +519,8 @@ INI;
 test = [foo_bar]
 INI;
         $c = new Container();
-        $c->loadArray(parse_ini_string($ini, true));
-        $this->assertEquals(get_class($c->foo_bar), get_class($c->bar_foo->test));
+        $c->loadArray(self::parseIni($ini));
+        $this->assertEquals(get_class($c->getItem('foo_bar')), get_class($c->getItem('bar_foo')->test));
     }
 
     protected function tearDown(): void
@@ -525,6 +530,15 @@ INI;
         }
 
         chdir($this->originalCwd);
+    }
+
+    /** @return array<string, mixed> */
+    private static function parseIni(string $ini): array
+    {
+        $result = parse_ini_string($ini, true);
+        self::assertIsArray($result);
+
+        return $result;
     }
 }
 

@@ -27,9 +27,10 @@ account = [user]
 ';
         $expected = 'respect';
         $environment = 'production';
-        $config = parse_ini_string($config, true);
-        $config = array_merge($config[$environment], $config);
+        $parsed = parse_ini_string($config, true);
+        $this->assertIsArray($parsed);
+        $config = array_merge($parsed[$environment], $parsed);
         $container = new Container($config);
-        $this->assertEquals($expected, $container->account);
+        $this->assertEquals($expected, $container->getItem('account'));
     }
 }

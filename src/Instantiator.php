@@ -5,6 +5,7 @@ namespace Respect\Config;
 use ReflectionClass;
 
 use function array_key_exists;
+use function assert;
 use function call_user_func;
 use function call_user_func_array;
 use function count;
@@ -12,6 +13,7 @@ use function end;
 use function explode;
 use function func_get_args;
 use function is_array;
+use function is_callable;
 use function is_object;
 use function key;
 use function str_contains;
@@ -25,6 +27,7 @@ class Instantiator
 
     protected mixed $instance = null;
 
+    /** @var ReflectionClass<object> */
     protected ReflectionClass $reflection;
 
     /** @var array<string, mixed> */
@@ -44,11 +47,14 @@ class Instantiator
 
     protected string|false $mode = self::MODE_DEPENDENCY;
 
+    /** @param class-string $className */
     public function __construct(protected string $className)
     {
         if (str_contains(strtolower($className), ' ')) {
             [$mode, $className] = explode(' ', $className, 2);
             $this->mode = $mode;
+            /** @var class-string $className */
+            $this->className = $className;
         }
 
         $this->reflection = new ReflectionClass($className);
@@ -158,7 +164,12 @@ class Instantiator
     protected function cleanupParams(array $params): array
     {
         while (end($params) === null) {
-            unset($params[key($params)]);
+            $key = key($params);
+            if ($key === null) {
+                break;
+            }
+
+            unset($params[$key]);
         }
 
         foreach ($params as &$p) {
@@ -173,7 +184,11 @@ class Instantiator
         return $value instanceof self ? $value->getInstance() : $value;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @param ReflectionClass<object> $class
+     *
+     * @return array<string, mixed>
+     */
     protected function findConstructorParams(ReflectionClass $class): array
     {
         $params = [];
@@ -233,16 +248,19 @@ class Instantiator
         $resultCallback ??= static function (): void {
         };
 
+        $callable = [$class, $methodName];
+        assert(is_callable($callable));
+
         foreach ($calls as $arguments) {
             if (is_array($arguments)) {
                 $resultCallback(call_user_func_array(
-                    [$class, $methodName],
+                    $callable,
                     $this->cleanupParams($arguments),
                 ));
             } elseif ($arguments !== null) {
-                $resultCallback(call_user_func([$class, $methodName], $this->lazyLoad($arguments)));
+                $resultCallback(call_user_func($callable, $this->lazyLoad($arguments)));
             } else {
-                $resultCallback(call_user_func([$class, $methodName]));
+                $resultCallback(call_user_func($callable));
             }
         }
     }
