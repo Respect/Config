@@ -1,0 +1,15 @@
+parameters:
+  level: 8
+  paths:
+    - src/
+    - tests/
+  ignoreErrors:
+    # __set writes that test Container's Instantiator replacement logic
+    -
+      message: '/Access to an undefined property Respect\\Config\\Container::\$/'
+      path: tests/ContainerTest.php
+      count: 1
+    -
+      message: '/Access to an undefined property Respect\\Config\\Container::\$/'
+      path: tests/LazyLoadTest.php
+      count: 2

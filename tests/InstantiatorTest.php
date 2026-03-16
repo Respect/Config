@@ -140,7 +140,7 @@ class TestClass
 
     public string $myProperty = 'foo';
 
-    public function __construct(mixed $foo = null, mixed $bar = null, mixed $baz = null)
+    public function __construct(mixed $foo = null, public mixed $bar = null, public mixed $baz = null)
     {
         if (!$foo) {
             return;

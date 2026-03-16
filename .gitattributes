@@ -1,0 +1,6 @@
+/* export-ignore
+
+# Project files
+/README.md -export-ignore
+/composer.json -export-ignore
+/src -export-ignore

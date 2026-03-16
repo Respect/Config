@@ -6,30 +6,42 @@ on:
   pull_request:
 
 jobs:
-  test:
+  tests:
+    name: Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: [ '8.5' ]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
+          php-version: '8.5'
+      - uses: ramsey/composer-install@v3
+      - run: composer phpunit
 
-      - name: Get composer cache
-        uses: actions/cache@v4
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
         with:
-          path: ~/.cache/composer
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
+          php-version: '8.5'
+          coverage: pcov
+      - uses: ramsey/composer-install@v3
+      - name: Generate coverage report
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Install dependencies
-        run: composer install --no-progress --no-suggest --prefer-dist --no-interaction
-
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit --configuration phpunit.xml.dist
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+      - uses: ramsey/composer-install@v3
+      - run: composer phpcs
+      - run: composer phpstan

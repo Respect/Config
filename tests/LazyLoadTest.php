@@ -22,8 +22,8 @@ string = [my_string]
 ";
         $expected = 'Hello World!';
         $container = new Container($config);
-        $container->my_string = $expected;
-        $this->assertEquals($expected, (string) $container->hello);
+        $container['my_string'] = $expected;
+        $this->assertEquals($expected, (string) $container->getItem('hello'));
     }
 
     public function testLazyLoadedInstance(): void
@@ -39,14 +39,15 @@ hello = [hello]
     ";
         $expected = 'Hello World!';
         $container = new Container($config);
-        $container->my_string = $expected;
-        $this->assertEquals($expected, (string) $container->hello);
+        $container['my_string'] = $expected;
+        $this->assertEquals($expected, (string) $container->getItem('hello'));
         $container = new Container($config);
         $container->{'hello Respect\\Config\\MyLazyLoadedHelloWorld'} = ['string' => $expected];
-        $this->assertEquals($expected, (string) $container->hello);
+        $this->assertEquals($expected, (string) $container->getItem('hello'));
         $container = new Container($config);
+        // __set detects existing Instantiator at 'hello' and calls setInstance()
         $container->hello = new MyLazyLoadedHelloWorld($expected);
-        $this->assertEquals($expected, (string) $container->hello);
+        $this->assertEquals($expected, (string) $container->getItem('hello'));
     }
 }
 

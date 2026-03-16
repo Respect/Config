@@ -10,9 +10,11 @@ use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionFunction;
+use ReflectionNamedType;
 
 use function array_filter;
 use function array_map;
+use function assert;
 use function constant;
 use function count;
 use function current;
@@ -32,6 +34,7 @@ use function preg_replace_callback;
 use function str_contains;
 use function trim;
 
+/** @extends ArrayObject<string, mixed> */
 class Container extends ArrayObject implements ContainerInterface
 {
     public function __construct(protected mixed $configurator = null)
@@ -191,7 +194,7 @@ class Container extends ArrayObject implements ContainerInterface
 
     protected function removeDuplicatedSpaces(string $string): string
     {
-        return preg_replace('/\s+/', ' ', $string);
+        return (string) preg_replace('/\s+/', ' ', $string);
     }
 
     protected function parseInstantiator(string $key, mixed $value): void
@@ -202,6 +205,7 @@ class Container extends ArrayObject implements ContainerInterface
             $keyName = $keyClass;
         }
 
+        /** @var class-string $keyClass */
         $instantiator = new Instantiator($keyClass);
 
         if (is_array($value)) {
@@ -297,7 +301,7 @@ class Container extends ArrayObject implements ContainerInterface
 
     protected function parseVariables(string $value): string
     {
-        return preg_replace_callback(
+        return (string) preg_replace_callback(
             '/\[(\w+)\]/',
             fn(array $match): string => $this[$match[1]] ?: '',
             $value,
@@ -337,6 +341,7 @@ class Container extends ArrayObject implements ContainerInterface
                 $mirror = $class->getMethod($method);
             } else {
                 $object = false;
+                assert($spec instanceof Closure || is_string($spec));
                 $mirror = new ReflectionFunction($spec);
             }
 
@@ -344,10 +349,8 @@ class Container extends ArrayObject implements ContainerInterface
             $arguments = array_map(
                 static function ($param) use ($container) {
                     $paramClass = $param->getType();
-                    if ($paramClass) {
-                        $paramClassName = $paramClass->getName();
-
-                        return $container->getItem($paramClassName);
+                    if ($paramClass instanceof ReflectionNamedType) {
+                        return $container->getItem($paramClass->getName());
                     }
 
                     return null;
