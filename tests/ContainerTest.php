@@ -1,22 +1,49 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Respect\Config;
 
+use DateTime;
+use InvalidArgumentException;
 use org\bovigo\vfs\vfsStream;
+use PDO;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\NotFoundExceptionInterface;
+use Respect\Test\Another\Cons;
 
-class ContainerTest extends \PHPUnit\Framework\TestCase
+use function chdir;
+use function class_alias;
+use function extension_loaded;
+use function file_get_contents;
+use function get_class;
+use function getcwd;
+use function in_array;
+use function is_dir;
+use function parse_ini_string;
+
+use const DIRECTORY_SEPARATOR;
+use const E_USER_ERROR;
+use const E_USER_WARNING;
+use const PATH_SEPARATOR;
+
+#[CoversClass(Container::class)]
+final class ContainerTest extends TestCase
 {
-    protected $originalCwd;
-    protected $vfsRoot;
+    private string $originalCwd;
+
+    private string $vfsRoot;
 
     protected function setUp(): void
     {
         $this->originalCwd = getcwd();
 
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = bar
 baz = bat
 INI;
-        $pnd = <<<PND
+        $pnd = <<<'PND'
 happy = panda
 panda = happy
 PND;
@@ -32,15 +59,9 @@ PND;
         $this->vfsRoot = vfsStream::url('root');
     }
 
-    protected function tearDown(): void {
-        if (is_dir($this->originalCwd)) {
-            chdir($this->originalCwd);
-        }
-    }
-
-    public function testLoadArray()
+    public function testLoadArray(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = bar
 baz = bat
 INI;
@@ -50,7 +71,7 @@ INI;
         $this->assertEquals('bat', $c->getItem('baz'));
     }
 
-    public function testLoadFile()
+    public function testLoadFile(): void
     {
         $contents = file_get_contents($this->vfsRoot . '/exists.ini');
         $c = new Container($contents);
@@ -58,63 +79,64 @@ INI;
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
-    
-    public function testContainerInterop()
+
+    public function testContainerInterop(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = bar
 baz = bat
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->get('foo'));
         $this->assertEquals('bat', $c->get('baz'));
     }
-    
-    public function testLoadInvalidName()
+
+    public function testLoadInvalidName(): void
     {
-        $this->expectException(\Psr\Container\NotFoundExceptionInterface::class);
+        $this->expectException(NotFoundExceptionInterface::class);
         $this->expectExceptionMessage('Item baz not found');
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = bar
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $c->get('baz');
     }
 
-    public function testConfigure() {
-        $this->expectException(\InvalidArgumentException::class);
+    public function testConfigure(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid input. Must be a valid file or array');
         $c = new Container(1);
         $c->a;
     }
 
-    public function testLoadInvalid()
+    public function testLoadInvalid(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $c = new Container('inexistent.ini');
         $c->foo;
     }
 
-    public function testLoadArraySections()
+    public function testLoadArraySections(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [sec]
 foo = bar
 baz = bat
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $d = $c->getItem('sec');
         $this->assertEquals('bar', $d['foo']);
         $this->assertEquals('bat', $d['baz']);
     }
 
-    public function testExpandVars()
+    public function testExpandVars(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 db_driver = "mysql"
 db_host   = "localhost"
 db_name   = "my_database"
@@ -122,38 +144,39 @@ db_user   = "root"
 db_pass   = ""
 db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertEquals(
-            'mysql:host=localhost;dbname=my_database', $c->getItem('db_dsn')
+            'mysql:host=localhost;dbname=my_database',
+            $c->getItem('db_dsn'),
         );
     }
 
-    public function testInstantiator()
+    public function testInstantiator(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo \stdClass]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
 
-    public function testInstantiator2()
+    public function testInstantiator2(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo \stdClass =
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
 
-    public function testConstants()
+    public function testConstants(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = E_USER_ERROR
 faa = [E_USER_ERROR, E_USER_WARNING]
 bar = PDO::ATTR_ERRMODE
@@ -161,98 +184,101 @@ bor = [PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION]
 lorem = ["foo"DIRECTORY_SEPARATOR"bar", PATH_SEPARATOR]
 ipsum = [PATH_SEPARATOR, "foo"DIRECTORY_SEPARATOR"bar"]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertEquals(E_USER_ERROR, $c->foo);
-        $this->assertEquals(\PDO::ATTR_ERRMODE, $c->bar);
-        $this->assertEquals(array(E_USER_ERROR, E_USER_WARNING), $c->faa);
-        $this->assertEquals(array(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION), $c->bor);
-        $this->assertEquals(array("foo".DIRECTORY_SEPARATOR."bar", PATH_SEPARATOR), $c->lorem);
-        $this->assertEquals(array(PATH_SEPARATOR, "foo".DIRECTORY_SEPARATOR."bar"), $c->ipsum);
+        $this->assertEquals(PDO::ATTR_ERRMODE, $c->bar);
+        $this->assertEquals([E_USER_ERROR, E_USER_WARNING], $c->faa);
+        $this->assertEquals([PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION], $c->bor);
+        $this->assertEquals(['foo' . DIRECTORY_SEPARATOR . 'bar', PATH_SEPARATOR], $c->lorem);
+        $this->assertEquals([PATH_SEPARATOR, 'foo' . DIRECTORY_SEPARATOR . 'bar'], $c->ipsum);
     }
 
-    public function testInstantiatorParams()
+    public function testInstantiatorParams(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo stdClass]
 foo = bar
 baz = bat
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('bar', $instantiator->getParam('foo'));
         $this->assertEquals('bat', $instantiator->getParam('baz'));
     }
-    public function testInstantiatorMethodCalls()
+
+    public function testInstantiatorMethodCalls(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [date DateTime]
 setTimestamp[] = 123
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $dateTime = $c->date;
         $this->assertEquals(123, $dateTime->getTimestamp());
     }
-    public function testInstantiatorNullMethodCalls()
+
+    public function testInstantiatorNullMethodCalls(): void
     {
-        if (!extension_loaded('pdo') || !in_array('sqlite', \PDO::getAvailableDrivers())) {
+        if (!extension_loaded('pdo') || !in_array('sqlite', PDO::getAvailableDrivers())) {
             $this->markTestSkipped('SQLite PDO driver not available');
         }
 
-        $ini = <<<INI
+        $ini = <<<'INI'
 [conn \PDO]
 dsn = sqlite::memory:
 beginTransaction[] =
 query[] = "CREATE TABLE foo(id INT)"
 commit[] =
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $conn = $c->conn;
         $this->assertNotEmpty($conn->query('SELECT * FROM sqlite_master')->fetch());
     }
 
-    public function testInstantiatorParamsArray()
+    public function testInstantiatorParamsArray(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo stdClass]
 foo[abc] = bar
 foo[def] = bat
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
-        $expected = array(
+        $expected = [
             'abc' => 'bar',
-            'def' => 'bat'
-        );
+            'def' => 'bat',
+        ];
         $this->assertEquals($expected, $instantiator->getParam('foo'));
     }
 
-    public function testInstantiatorParamsBrackets()
+    public function testInstantiatorParamsBrackets(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo stdClass]
 foo[abc] = [bat, blz]
 foo[def] = bat
 baz = [bat, blz]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
-        $expectedFoo = array(
-            'abc' => array('bat', 'blz'),
-            'def' => 'bat'
-        );
-        $expectedBaz = array('bat', 'blz');
+        $expectedFoo = [
+            'abc' => ['bat', 'blz'],
+            'def' => 'bat',
+        ];
+        $expectedBaz = ['bat', 'blz'];
         $this->assertEquals($expectedFoo, $instantiator->getParam('foo'));
         $this->assertEquals($expectedBaz, $instantiator->getParam('baz'));
     }
-    public function testInstantiatorParamsBracketsReferences()
+
+    public function testInstantiatorParamsBracketsReferences(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 hi = someName
 [foo stdClass]
 foo[abc] = [bat, blz]
@@ -260,39 +286,43 @@ foo[def] = bat
 baz = [bat, [hi]]
 barr = [bat, [hi]]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo', true);
-        $expectedFoo = array(
-            'abc' => array('bat', 'blz'),
-            'def' => 'bat'
-        );
-        $expectedBaz = array('bat', 'someName');
+        $expectedFoo = [
+            'abc' => ['bat', 'blz'],
+            'def' => 'bat',
+        ];
+        $expectedBaz = ['bat', 'someName'];
         $this->assertEquals($expectedFoo, $instantiator->getParam('foo'));
         $this->assertEquals($expectedBaz, $instantiator->getParam('baz'));
     }
 
-    public function testGetItemLazyLoad()
+    public function testGetItemLazyLoad(): void
     {
-        $c = new Container;
-        $c->foo = function() { return 'ok'; };
+        $c = new Container();
+        $c->foo = static function () {
+            return 'ok';
+        };
         $this->assertEquals('ok', $c->getItem('foo', false));
     }
 
-    public function testClosureWithLoadedFile()
+    public function testClosureWithLoadedFile(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 respect_blah = ""
 INI;
         $c = new Container($ini);
-        $c->panda = function() { return 'ok'; };
+        $c->panda = static function () {
+            return 'ok';
+        };
         $this->assertEquals('ok', $c->getItem('panda', false));
     }
 
-    public function testLazyLoadinessOnMultipleConfigLevels()
+    public function testLazyLoadinessOnMultipleConfigLevels(): void
     {
         $GLOBALS['_SHIT_'] = false;
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
 child = ""
 [bar Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
@@ -300,83 +330,85 @@ child = [foo]
 [baz Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
 child = [bar]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertFalse($GLOBALS['_SHIT_']);
         $GLOBALS['_SHIT_'] = false;
     }
 
-    public function testSequencesConstructingLazy()
+    public function testSequencesConstructingLazy(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [bar Respect\Config\Bar]
 [foo Respect\Config\Foo]
 hello[] = ["opa", [bar]]
 INI;
         $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
-        $this->assertInstanceOf('Respect\Config\Bar', $c->foo->bar);
+        $this->assertInstanceOf(Bar::class, $c->foo->bar);
     }
 
-    public function testPascutti()
+    public function testPascutti(): void
     {
-        if (!extension_loaded('pdo') || !in_array('sqlite', \PDO::getAvailableDrivers())) {
+        if (!extension_loaded('pdo') || !in_array('sqlite', PDO::getAvailableDrivers())) {
             $this->markTestSkipped('SQLite PDO driver not available');
         }
 
         $GLOBALS['_SHIT_'] = false;
-        $ini = <<<INI
+        $ini = <<<'INI'
 [pdo StdClass]
 
 [db Respect\Config\DatabaseWow]
 con = [pdo];
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
-        $c->pdo = new \PDO('sqlite::memory:');
+        $c->pdo = new PDO('sqlite::memory:');
         $this->assertSame($c->pdo, $c->db->c);
     }
 
-    public function testPascuttiTypeHintIssue40()
+    public function testPascuttiTypeHintIssue40(): void
     {
         $GLOBALS['_MERD_'] = false;
-        $ini = <<<INI
+        $ini = <<<'INI'
 [now DateTime]
 
 [typed Respect\Config\TypeHintWowMuchType]
 date = [now];
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertInstanceOf(
-            'Respect\Config\TypeHintWowMuchType',
-            $c->typed
+            TypeHintWowMuchType::class,
+            $c->typed,
         );
     }
 
-    public function testLockedContainer()
+    public function testLockedContainer(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = [undef]
 bar = [foo]
 INI;
         $c = new Container(parse_ini_string($ini, true));
-        $result = $c(array('undef'=>'Hello'));
+        $result = $c(['undef' => 'Hello']);
         $this->assertEquals('Hello', $result->bar);
     }
-    public function testLockedContainer2()
+
+    public function testLockedContainer2(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = [undef]
 bar = [foo]
 INI;
         $c = new Container(parse_ini_string($ini, true));
-        $result = $c->bar(array('undef'=>'Hello'));
+        $result = $c->bar(['undef' => 'Hello']);
         $this->assertEquals('Hello', $result);
     }
-    public function testFactory()
+
+    public function testFactory(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [now new DateTime]
 datetime = now
 INI;
@@ -385,9 +417,10 @@ INI;
         $result2 = $c->now;
         $this->assertNotSame($result, $result2);
     }
-    public function testDependenciesDoesNotAffectFactories()
+
+    public function testDependenciesDoesNotAffectFactories(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [now DateTime]
 datetime = now
 INI;
@@ -396,136 +429,158 @@ INI;
         $result2 = $c->now;
         $this->assertSame($result, $result2);
     }
-    public function testByInstanceCallback()
+
+    public function testByInstanceCallback(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [instanceof DateTime]
 datetime = now
 INI;
         $c = new Container(parse_ini_string($ini, true));
         $called = false;
-        $result = $c(function(\DateTime $date) use (&$called) {
+        $result = $c(static function (DateTime $date) use (&$called) {
             $called = true;
+
             return $date;
         });
         $result2 = $c['DateTime'];
-        $this->assertInstanceOf('DateTime', $result);
-        $this->assertInstanceOf('DateTime', $result2);
+        $this->assertInstanceOf(DateTime::class, $result);
+        $this->assertInstanceOf(DateTime::class, $result2);
         $this->assertTrue($called);
     }
-    public function testByInstanceCallback2()
+
+    public function testByInstanceCallback2(): void
     {
         $c = new Container();
-        $c(new \DateTime);
+        $c(new DateTime());
         $called = false;
-        $result = $c(function(\DateTime $date) use (&$called) {
+        $result = $c(static function (DateTime $date) use (&$called) {
             $called = true;
+
             return $date;
         });
         $result2 = $c['DateTime'];
-        $this->assertInstanceOf('DateTime', $result);
-        $this->assertInstanceOf('DateTime', $result2);
+        $this->assertInstanceOf(DateTime::class, $result);
+        $this->assertInstanceOf(DateTime::class, $result2);
         $this->assertTrue($called);
     }
-    public function testByMethodCallback()
+
+    public function testByMethodCallback(): void
     {
         $c = new Container();
-        $c(new \DateTime);
-        $result = $c(array(__NAMESPACE__.'\\Foo', 'hey'));
-        $this->assertInstanceOf('DateTime', $result);
+        $c(new DateTime());
+        $result = $c([__NAMESPACE__ . '\\Foo', 'hey']);
+        $this->assertInstanceOf(DateTime::class, $result);
     }
 
-
-    public function testClassConstants()
+    public function testClassConstants(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 foo = \Respect\Config\TestConstant::CONS_TEST
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
-        $this->assertEquals(\Respect\Config\TestConstant::CONS_TEST, $c->foo);
+        $this->assertEquals(TestConstant::CONS_TEST, $c->foo);
     }
 
-    public function testClassConstantsAnotherNamespace()
+    public function testClassConstantsAnotherNamespace(): void
     {
-        class_alias('Respect\Config\TestConstant', 'Respect\Test\Another\Cons');
-        $ini = <<<INI
+        class_alias(TestConstant::class, 'Respect\Test\Another\Cons');
+        $ini = <<<'INI'
 foo = \Respect\Test\Another\Cons::CONS_TEST
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
-        $this->assertEquals(\Respect\Test\Another\Cons::CONS_TEST, $c->foo);
+        $this->assertEquals(Cons::CONS_TEST, $c->foo);
     }
 
-
-    public function testInstantiatorWithUnderline()
+    public function testInstantiatorWithUnderline(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo_bar \stdClass]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $instantiator = $c->getItem('foo_bar', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
 
-    public function testClassWithAnotherAndUnderline()
+    public function testClassWithAnotherAndUnderline(): void
     {
-        $ini = <<<INI
+        $ini = <<<'INI'
 [foo_bar stdClass]
 
 [bar_foo \Respect\Config\WheneverWithAProperty]
 test = [foo_bar]
 INI;
-        $c = new Container;
+        $c = new Container();
         $c->loadArray(parse_ini_string($ini, true));
         $this->assertEquals(get_class($c->foo_bar), get_class($c->bar_foo->test));
     }
 
+    protected function tearDown(): void
+    {
+        if (!is_dir($this->originalCwd)) {
+            return;
+        }
+
+        chdir($this->originalCwd);
+    }
 }
-class Bar {}
+
+class Bar
+{
+}
+
 class Foo
 {
-    public $bar;
+    public mixed $bar = null;
 
-    static function hey(\DateTime $date) {
-       return $date;
+    public static function hey(DateTime $date): DateTime
+    {
+        return $date;
     }
 
-    function hello($some, Bar $bar) {
+    public function hello(mixed $some, Bar $bar): void
+    {
         $this->bar = $bar;
     }
 }
 
 class WheneverIBornIPopulateAGlobalCalled_SHIT_
 {
-    public function __construct(){
+    public function __construct()
+    {
         $GLOBALS['_SHIT_'] = true;
     }
 }
 
-class DatabaseWow {
-    public $c;
-    public function __construct($con) {
+class DatabaseWow
+{
+    public mixed $c;
+
+    public function __construct(mixed $con)
+    {
         $this->c = $con;
     }
 }
 
+class TypeHintWowMuchType
+{
+    public DateTime $d;
 
-class TypeHintWowMuchType {
-    public $d;
-    public function __construct(\DateTime $date) {
+    public function __construct(DateTime $date)
+    {
         $this->d = $date;
     }
 }
 
-class TestConstant {
-    const CONS_TEST = "XPTO";
+class TestConstant
+{
+    public const string CONS_TEST = 'XPTO';
 }
-
 
 class WheneverWithAProperty
 {
-    public $test;
-    
+    public mixed $test = null;
 }

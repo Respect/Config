@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<ruleset
+    name="PHPCS Coding Standards for Respect/Config"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd"
+>
+    <arg name="basepath" value="." />
+    <arg name="cache" value=".phpcs.cache" />
+    <arg name="colors" />
+    <arg name="extensions" value="php" />
+    <arg value="p" />
+    <arg value="s" />
+
+    <file>src/</file>
+    <file>tests/</file>
+
+    <rule ref="Respect" />
+
+    <!-- Instantiator dynamically invokes methods with loosely-typed INI data;
+         strict_types conflicts with call_user_func coercion requirements -->
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing">
+        <exclude-pattern>src/Instantiator.php</exclude-pattern>
+    </rule>
+
+    <!-- Test files contain inline fixture classes required by the DI container tests -->
+    <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+        <exclude-pattern>tests/</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Classes.ClassFileName.NoMatch">
+        <exclude-pattern>tests/</exclude-pattern>
+    </rule>
+    <rule ref="Squiz.Classes.ValidClassName.NotPascalCase">
+        <exclude-pattern>tests/</exclude-pattern>
+    </rule>
+
+    <!-- Test fixture properties use snake_case to match INI config keys -->
+    <rule ref="Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps">
+        <exclude-pattern>tests/</exclude-pattern>
+    </rule>
+</ruleset>

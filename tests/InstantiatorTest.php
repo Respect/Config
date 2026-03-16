@@ -1,98 +1,109 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Respect\Config;
 
-class InstantiatorTest extends \PHPUnit\Framework\TestCase
-{
+use DateTimeZone;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
-    public function testStaticMethodConstructor()
+use function date_default_timezone_set;
+use function func_num_args;
+use function get_class;
+
+#[CoversClass(Instantiator::class)]
+final class InstantiatorTest extends TestCase
+{
+    public function testStaticMethodConstructor(): void
     {
         $i = new Instantiator('DateTime');
-        $i->setParam('createFromFormat', array(array('Y-m-d', '2005-10-12')));
+        $i->setParam('createFromFormat', [['Y-m-d', '2005-10-12']]);
         $s = $i->getInstance();
-        $this->assertEquals($s->format('Y-m-d'), '2005-10-12');
+        $this->assertEquals('2005-10-12', $s->format('Y-m-d'));
     }
 
-    public function testConstructorParamNames()
+    public function testConstructorParamNames(): void
     {
         date_default_timezone_set('UTC');
         $i = new Instantiator('DateTime');
         $i->setParam('datetime', 'now');
-        $i->setParam('timezone', $tz = new \DateTimeZone('UTC'));
+        $i->setParam('timezone', $tz = new DateTimeZone('UTC'));
         $s = $i->getInstance();
-        $this->assertEquals('DateTime', get_class($s));
+        $this->assertEquals('DateTime', $s::class);
         $this->assertEquals($tz, $s->getTimezone());
     }
 
-    public function testConstructorFull()
+    public function testConstructorFull(): void
     {
         $i = new Instantiator('DateTime');
-        $i->setParam('__construct',
-            array('now', $tz = new \DateTimeZone('America/Sao_Paulo'))
+        $i->setParam(
+            '__construct',
+            ['now', $tz = new DateTimeZone('America/Sao_Paulo')],
         );
         $s = $i->getInstance();
-        $this->assertEquals('DateTime', get_class($s));
+        $this->assertEquals('DateTime', $s::class);
         $this->assertEquals($tz, $s->getTimezone());
     }
 
-    public function testMethodNoParams()
+    public function testMethodNoParams(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
-        $i->setParam('noParams', array(
-            array()
-        ));
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('noParams', [
+            [],
+        ]);
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
     }
 
-    public function testMethodWithObjectProperty()
+    public function testMethodWithObjectProperty(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
         $i->setParam('myProperty', 'bar');
-        $i->setParam('usingProperty', array(
-            array()
-        ));
+        $i->setParam('usingProperty', [
+            [],
+        ]);
         $testObject = $i->getInstance();
         $this->assertTrue($testObject->myPropertyUsed);
     }
 
-    public function testMethodSingleParam()
+    public function testMethodSingleParam(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
-        $i->setParam('oneParam', array(
-            array(true)
-        ));
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('oneParam', [
+            [true],
+        ]);
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
     }
 
-    public function testMethodMultiParams()
+    public function testMethodMultiParams(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
-        $i->setParam('twoParams', array(
-            array(true, true)
-        ));
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('twoParams', [
+            [true, true],
+        ]);
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
     }
 
-    public function testConstructorNullParams()
+    public function testConstructorNullParams(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
-        $i->setParam('__construct', array(true));
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('__construct', [true]);
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
     }
 
-    public function testConstructorNullParamsFalse()
+    public function testConstructorNullParamsFalse(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\testClass');
-        $i->setParam('__construct', array(false));
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('__construct', [false]);
         $s = $i->getInstance();
         $this->assertFalse($s->ok);
     }
 
-    public function testProperties()
+    public function testProperties(): void
     {
         $i = new Instantiator('stdClass');
         $i->setParam('foo', 'bar');
@@ -102,7 +113,7 @@ class InstantiatorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('bat', $s->baz);
     }
 
-    public function testNestedInstantiators()
+    public function testNestedInstantiators(): void
     {
         $i1 = new Instantiator('stdClass');
         $i2 = new Instantiator('stdClass');
@@ -111,7 +122,7 @@ class InstantiatorTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('stdClass', get_class($s->foo));
     }
 
-    public function testMagickInvoke()
+    public function testMagickInvoke(): void
     {
         $i1 = new Instantiator('stdClass');
         $i2 = new Instantiator('stdClass');
@@ -119,45 +130,58 @@ class InstantiatorTest extends \PHPUnit\Framework\TestCase
         $s = $i1();
         $this->assertEquals('stdClass', get_class($s->foo));
     }
-
 }
 
-class testClass
+class TestClass
 {
+    public bool $ok = false;
 
-    public $ok = false;
-    public $myPropertyUsed = false;
-    public $myProperty = 'foo';
+    public bool $myPropertyUsed = false;
 
-    public function __construct($foo=null, $bar=null, $baz=null)
+    public string $myProperty = 'foo';
+
+    public function __construct(mixed $foo = null, mixed $bar = null, mixed $baz = null)
     {
-        if ($foo)
-            $this->ok = true;
+        if (!$foo) {
+            return;
+        }
+
+        $this->ok = true;
     }
 
-    public function usingProperty()
+    public function usingProperty(): void
     {
-        if ($this->myProperty == 'bar')
-            $this->myPropertyUsed = true;
+        if ($this->myProperty !== 'bar') {
+            return;
+        }
+
+        $this->myPropertyUsed = true;
     }
 
-    public function noParams()
+    public function noParams(): void
     {
-        if (0 == func_num_args())
-            $this->ok = true;
+        if (func_num_args() !== 0) {
+            return;
+        }
+
+        $this->ok = true;
     }
 
-    public function oneParam($ok)
+    public function oneParam(mixed $ok): void
     {
-        if ($ok)
-            $this->ok = true;
+        if (!$ok) {
+            return;
+        }
+
+        $this->ok = true;
     }
 
-    public function twoParams($ok, $ok2)
+    public function twoParams(mixed $ok, mixed $ok2): void
     {
-        if ($ok && $ok2)
-            $this->ok = true;
-    }
+        if (!$ok || !$ok2) {
+            return;
+        }
 
+        $this->ok = true;
+    }
 }
-

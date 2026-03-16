@@ -4,51 +4,70 @@ namespace Respect\Config;
 
 use ReflectionClass;
 
+use function array_key_exists;
+use function call_user_func;
+use function call_user_func_array;
+use function count;
+use function end;
+use function explode;
+use function func_get_args;
+use function is_array;
+use function is_object;
+use function key;
+use function str_contains;
+use function stripos;
+use function strtolower;
+
 class Instantiator
 {
-    const MODE_DEPENDENCY = false;
-    const MODE_FACTORY = 'new';
+    public const false MODE_DEPENDENCY = false;
+    public const string MODE_FACTORY = 'new';
 
-    protected $instance;
-    protected $reflection;
-    protected $constructor = array();
-    protected $className;
-    protected $params = array();
-    protected $staticMethodCalls = array();
-    protected $methodCalls = array();
-    protected $propertySetters = array();
-    protected $mode = self::MODE_DEPENDENCY;
+    protected mixed $instance = null;
 
-    public function __construct($className)
+    protected ReflectionClass $reflection;
+
+    /** @var array<string, mixed> */
+    protected array $constructor = [];
+
+    /** @var array<string, mixed> */
+    protected array $params = [];
+
+    /** @var array<array{string, mixed}> */
+    protected array $staticMethodCalls = [];
+
+    /** @var array<array{string, mixed}> */
+    protected array $methodCalls = [];
+
+    /** @var array<string, mixed> */
+    protected array $propertySetters = [];
+
+    protected string|false $mode = self::MODE_DEPENDENCY;
+
+    public function __construct(protected string $className)
     {
-        if (false !== stripos($className, ' ')) {
-            list($mode, $className) = explode(' ', $className, 2);
+        if (str_contains(strtolower($className), ' ')) {
+            [$mode, $className] = explode(' ', $className, 2);
             $this->mode = $mode;
         }
 
         $this->reflection = new ReflectionClass($className);
         $this->constructor = $this->findConstructorParams($this->reflection);
-        $this->className = $className;
     }
 
-    public function getMode()
+    public function getMode(): string|false
     {
         return $this->mode;
     }
 
-    public function __invoke()
-    {
-        return call_user_func_array(array($this, 'getInstance'), func_get_args());
-    }
-
-    public function getClassName()
+    public function getClassName(): string
     {
         return $this->className;
     }
 
-    public function getInstance($forceNew = false)
+    public function getInstance(bool $forceNew = false): mixed
     {
-        if ($this->mode == static::MODE_FACTORY) {
+        if ($this->mode === self::MODE_FACTORY) {
             $this->instance = null;
         }
 
@@ -56,28 +75,31 @@ class Instantiator
             return $this->instance;
         }
 
-        $className     = $this->className;
+        $className = $this->className;
         $staticMethods = count($this->staticMethodCalls);
+        $instance = null;
         foreach ($this->staticMethodCalls as $methodCalls) {
             $this->performMethodCalls(
                 $className,
                 $methodCalls,
-                function ($result) use ($className, &$instance, $staticMethods) {
-                    if ($result instanceof $className || ($staticMethods == 1 && is_object($result))) {
-                        $instance = $result;
+                static function (mixed $result) use ($className, &$instance, $staticMethods): void {
+                    if (!($result instanceof $className) && ($staticMethods !== 1 || !is_object($result))) {
+                        return;
                     }
-                }
+
+                    $instance = $result;
+                },
             );
         }
 
-        $constructor     = $this->reflection->getConstructor();
-        $hasConstructor  = ($constructor) ? $constructor->isPublic() : false;
+        $constructor = $this->reflection->getConstructor();
+        $hasConstructor = $constructor ? $constructor->isPublic() : false;
         if (empty($instance)) {
             if (empty($this->constructor) || !$hasConstructor) {
                 $instance = new $className();
             } else {
                 $instance = $this->reflection->newInstanceArgs(
-                    $this->cleanupParams($this->constructor)
+                    $this->cleanupParams($this->constructor),
                 );
             }
         }
@@ -93,28 +115,28 @@ class Instantiator
         return $this->instance = $instance;
     }
 
-    public function getParam($name)
+    public function getParam(string $name): mixed
     {
         return $this->params[$name];
     }
 
-    public function setInstance($instance)
+    public function setInstance(mixed $instance): void
     {
         $this->instance = $instance;
     }
 
-    public function setParam($name, $value)
+    public function setParam(string $name, mixed $value): void
     {
         $value = $this->processValue($value);
 
         if ($this->matchStaticMethod($name)) {
-            $this->staticMethodCalls[] = array($name, $value);
+            $this->staticMethodCalls[] = [$name, $value];
         } elseif ($this->matchConstructorParam($name)) {
             $this->constructor[$name] = $value;
-        } elseif ($this->matchFullConstructor($name, $value)) {
-            $this->constructor = $value;
+        } elseif ($this->matchFullConstructor($name)) {
+            $this->constructor = is_array($value) ? $value : [];
         } elseif ($this->matchMethod($name)) {
-            $this->methodCalls[] = array($name, $value);
+            $this->methodCalls[] = [$name, $value];
         } else {
             $this->propertySetters[$name] = $value;
         }
@@ -122,14 +144,20 @@ class Instantiator
         $this->params[$name] = $value;
     }
 
-    public function getParams()
+    /** @return array<string, mixed> */
+    public function getParams(): array
     {
         return $this->params;
     }
 
-    protected function cleanupParams(array $params)
+    /**
+     * @param array<mixed> $params
+     *
+     * @return array<mixed>
+     */
+    protected function cleanupParams(array $params): array
     {
-        while (null === end($params)) {
+        while (end($params) === null) {
             unset($params[key($params)]);
         }
 
@@ -140,29 +168,29 @@ class Instantiator
         return $params;
     }
 
-    protected function lazyLoad($value)
+    protected function lazyLoad(mixed $value): mixed
     {
         return $value instanceof self ? $value->getInstance() : $value;
     }
 
-    protected function findConstructorParams(ReflectionClass $class)
+    /** @return array<string, mixed> */
+    protected function findConstructorParams(ReflectionClass $class): array
     {
-        $params = array();
+        $params = [];
         $constructor = $class->getConstructor();
 
         if (!$constructor) {
-            return array();
+            return [];
         }
 
         foreach ($constructor->getParameters() as $param) {
-            $params[$param->getName()] = $param->isDefaultValueAvailable() ?
-                $param->getDefaultValue() : null;
+            $params[$param->getName()] = $param->isDefaultValueAvailable() ? $param->getDefaultValue() : null;
         }
 
         return $params;
     }
 
-    protected function processValue($value)
+    protected function processValue(mixed $value): mixed
     {
         if (is_array($value)) {
             foreach ($value as $valueKey => $subValue) {
@@ -173,46 +201,54 @@ class Instantiator
         return $value;
     }
 
-    protected function matchConstructorParam($name)
+    protected function matchConstructorParam(string $name): bool
     {
         return array_key_exists($name, $this->constructor);
     }
 
-    protected function matchFullConstructor($name, &$value)
+    protected function matchFullConstructor(string $name): bool
     {
-        return $name == '__construct'
-        || ($name == $this->className && stripos($this->className, '\\'));
+        return $name === '__construct'
+            || ($name === $this->className && stripos($this->className, '\\') !== false);
     }
 
-    protected function matchMethod($name)
+    protected function matchMethod(string $name): bool
     {
         return $this->reflection->hasMethod($name);
     }
 
-    protected function matchStaticMethod($name)
+    protected function matchStaticMethod(string $name): bool
     {
         return $this->reflection->hasMethod($name)
-        && $this->reflection->getMethod($name)->isStatic();
+            && $this->reflection->getMethod($name)->isStatic();
     }
 
-    protected function performMethodCalls($class, array $methodCalls, $resultCallback = null)
-    {
-        list($methodName, $calls) = $methodCalls;
-        $resultCallback = $resultCallback ?: function () {
-
+    /** @param array{string, mixed} $methodCalls */
+    protected function performMethodCalls(
+        object|string $class,
+        array $methodCalls,
+        callable|null $resultCallback = null,
+    ): void {
+        [$methodName, $calls] = $methodCalls;
+        $resultCallback ??= static function (): void {
         };
 
         foreach ($calls as $arguments) {
             if (is_array($arguments)) {
                 $resultCallback(call_user_func_array(
-                    array($class, $methodName),
-                    $this->cleanUpParams($arguments)
+                    [$class, $methodName],
+                    $this->cleanupParams($arguments),
                 ));
-            } elseif (!is_null($arguments)) {
-                $resultCallback(call_user_func(array($class, $methodName), $this->lazyLoad($arguments)));
+            } elseif ($arguments !== null) {
+                $resultCallback(call_user_func([$class, $methodName], $this->lazyLoad($arguments)));
             } else {
-                $resultCallback(call_user_func(array($class, $methodName)));
+                $resultCallback(call_user_func([$class, $methodName]));
             }
         }
+    }
+
+    public function __invoke(): mixed
+    {
+        return $this->getInstance(...func_get_args());
     }
 }
