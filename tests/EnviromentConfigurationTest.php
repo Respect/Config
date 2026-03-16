@@ -1,28 +1,35 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Respect\Config;
 
-class EnviromentConfigurationTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+
+use function array_merge;
+use function parse_ini_string;
+
+#[CoversClass(Container::class)]
+#[Group('issues')]
+final class EnviromentConfigurationTest extends TestCase
 {
-    /**
-     * @group   issues
-     * @ticket  30
-     */
-    public function testEnviromentConfiguration30()
+    public function testEnviromentConfiguration30(): void
     {
-        $config = "
+        $config = '
 [development]
 user = alganet
 
 [production]
 user = respect
 account = [user]
-";
+';
         $expected = 'respect';
-        $ENVIRONMENT = 'production';
-        $config  = parse_ini_string($config,true);
-        $config  = array_merge($config[$ENVIRONMENT], $config);
+        $environment = 'production';
+        $config = parse_ini_string($config, true);
+        $config = array_merge($config[$environment], $config);
         $container = new Container($config);
-        $this->assertEquals($expected, $container->account); //respect
+        $this->assertEquals($expected, $container->account);
     }
 }
-

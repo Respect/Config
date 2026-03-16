@@ -1,13 +1,18 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Respect\Config;
 
-class LazyLoadTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(Container::class)]
+#[Group('issues')]
+final class LazyLoadTest extends TestCase
 {
-    /**
-     * @group   issues
-     * @ticket  14
-     */
-    public function testLazyLoadedParameters()
+    public function testLazyLoadedParameters(): void
     {
         $config = "
 my_string = 'Hey you!'
@@ -15,13 +20,13 @@ my_string = 'Hey you!'
 [hello Respect\Config\MyLazyLoadedHelloWorld]
 string = [my_string]
 ";
-        $expected  = 'Hello World!';
+        $expected = 'Hello World!';
         $container = new Container($config);
         $container->my_string = $expected;
         $this->assertEquals($expected, (string) $container->hello);
     }
 
-    public function testLazyLoadedInstance()
+    public function testLazyLoadedInstance(): void
     {
         $config = "
 my_string = 'Hey you!'
@@ -32,28 +37,29 @@ string = [my_string]
 [consumer Respect\Config\MyLazyLoadedHelloWorldConsumer]
 hello = [hello]
     ";
-        $expected  = 'Hello World!';
+        $expected = 'Hello World!';
         $container = new Container($config);
         $container->my_string = $expected;
         $this->assertEquals($expected, (string) $container->hello);
         $container = new Container($config);
-        $container->{"hello Respect\\Config\\MyLazyLoadedHelloWorld"} = array('string' => $expected);
+        $container->{'hello Respect\\Config\\MyLazyLoadedHelloWorld'} = ['string' => $expected];
         $this->assertEquals($expected, (string) $container->hello);
         $container = new Container($config);
         $container->hello = new MyLazyLoadedHelloWorld($expected);
         $this->assertEquals($expected, (string) $container->hello);
     }
 }
+
 class MyLazyLoadedHelloWorldConsumer
 {
-    protected $string;
+    protected string $string;
 
-    public function __construct($hello)
+    public function __construct(mixed $hello)
     {
         $this->string = $hello;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->string;
     }
@@ -61,16 +67,12 @@ class MyLazyLoadedHelloWorldConsumer
 
 class MyLazyLoadedHelloWorld
 {
-    protected $string;
-
-    public function __construct($string)
+    public function __construct(protected string $string)
     {
-        $this->string = $string;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->string;
     }
 }
-

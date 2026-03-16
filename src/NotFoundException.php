@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Respect\Config;
 
-use Psr\Container\NotFoundExceptionInterface as BaseNotFoundException;
+use Exception;
+use Psr\Container\NotFoundExceptionInterface;
 
-class NotFoundException extends \Exception implements BaseNotFoundException
+final class NotFoundException extends Exception implements NotFoundExceptionInterface
 {
 }
