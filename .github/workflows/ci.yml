@@ -14,7 +14,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: composer phpunit
 
   code-coverage:
@@ -26,7 +26,7 @@ jobs:
         with:
           php-version: '8.5'
           coverage: pcov
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - name: Generate coverage report
         run: vendor/bin/phpunit --coverage-clover=coverage.xml
       - name: Upload to Codecov
@@ -42,6 +42,6 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v4
       - run: composer phpcs
       - run: composer phpstan
