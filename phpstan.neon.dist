@@ -12,4 +12,4 @@ parameters:
     -
       message: '/Access to an undefined property Respect\\Config\\Container::\$/'
       path: tests/LazyLoadTest.php
-      count: 2
+      count: 1

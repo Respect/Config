@@ -21,8 +21,9 @@ my_string = 'Hey you!'
 string = [my_string]
 ";
         $expected = 'Hello World!';
-        $container = new Container($config);
+        $container = new Container();
         $container['my_string'] = $expected;
+        (new IniLoader($container))->fromString($config);
         $this->assertEquals($expected, (string) $container->getItem('hello'));
     }
 
@@ -38,13 +39,16 @@ string = [my_string]
 hello = [hello]
     ";
         $expected = 'Hello World!';
-        $container = new Container($config);
+        $container = new Container();
         $container['my_string'] = $expected;
+        (new IniLoader($container))->fromString($config);
         $this->assertEquals($expected, (string) $container->getItem('hello'));
-        $container = new Container($config);
-        $container->{'hello Respect\\Config\\MyLazyLoadedHelloWorld'} = ['string' => $expected];
+        $container = new Container();
+        $container['hello Respect\\Config\\MyLazyLoadedHelloWorld'] = ['string' => $expected];
+        (new IniLoader($container))->fromString($config);
         $this->assertEquals($expected, (string) $container->getItem('hello'));
-        $container = new Container($config);
+        $container = new Container();
+        (new IniLoader($container))->fromString($config);
         // __set detects existing Instantiator at 'hello' and calls setInstance()
         $container->hello = new MyLazyLoadedHelloWorld($expected);
         $this->assertEquals($expected, (string) $container->getItem('hello'));

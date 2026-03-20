@@ -120,7 +120,7 @@ value = from_config
 [consumer autowire Respect\Config\AutowireTypedConsumer]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
 
         $consumer = $c->getItem('consumer');
         $this->assertInstanceOf(AutowireTypedConsumer::class, $consumer);
@@ -141,7 +141,7 @@ value = explicit
 dep = [dep2]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
 
         $consumer = $c->getItem('consumer');
         $this->assertEquals('explicit', $consumer->dep->value);
