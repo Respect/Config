@@ -16,7 +16,6 @@ use stdClass;
 use function chdir;
 use function class_alias;
 use function extension_loaded;
-use function file_get_contents;
 use function get_class;
 use function getcwd;
 use function in_array;
@@ -61,25 +60,33 @@ PND;
         $this->vfsRoot = vfsStream::url('root');
     }
 
-    public function testLoadArray(): void
+    public function testConstructorWithArray(): void
     {
-        $ini = <<<'INI'
-foo = bar
-baz = bat
-INI;
-        $c = new Container(self::parseIni($ini));
+        $c = new Container(['foo' => 'bar', 'baz' => 'bat']);
         $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
 
-    public function testLoadFile(): void
+    public function testLoadViaIniLoader(): void
     {
-        $contents = file_get_contents($this->vfsRoot . '/exists.ini');
-        $c = new Container($contents);
+        $c = IniLoader::load(self::parseIni("foo = bar\nbaz = bat"));
         $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
+    }
+
+    public function testLoadViaIniLoaderString(): void
+    {
+        $c = IniLoader::load("foo = bar\nbaz = bat");
+        $this->assertEquals('bar', $c->getItem('foo'));
+        $this->assertEquals('bat', $c->getItem('baz'));
+    }
+
+    public function testLoadViaIniLoaderFile(): void
+    {
+        $c = IniLoader::load($this->vfsRoot . '/exists.ini');
+        $this->assertEquals('bar', $c->getItem('foo'));
     }
 
     public function testContainerInterop(): void
@@ -89,7 +96,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertTrue($c->has('foo'));
         $this->assertEquals('bar', $c->get('foo'));
         $this->assertEquals('bat', $c->get('baz'));
@@ -103,23 +110,21 @@ INI;
 foo = bar
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $c->get('baz');
     }
 
-    public function testConfigure(): void
+    public function testLoadInvalidInput(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid input. Must be a valid file or array');
-        $c = new Container(1);
-        $c->get('a');
+        IniLoader::load(1);
     }
 
-    public function testLoadInvalid(): void
+    public function testLoadInvalidIniString(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $c = new Container('inexistent.ini');
-        $c->get('foo');
+        IniLoader::load('inexistent.ini');
     }
 
     public function testLoadArraySections(): void
@@ -130,7 +135,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $d = $c->getItem('sec');
         $this->assertEquals('bar', $d['foo']);
         $this->assertEquals('bat', $d['baz']);
@@ -147,7 +152,7 @@ db_pass   = ""
 db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertEquals(
             'mysql:host=localhost;dbname=my_database',
             $c->getItem('db_dsn'),
@@ -160,7 +165,7 @@ INI;
 [foo \stdClass]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
@@ -171,7 +176,7 @@ INI;
 foo \stdClass =
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
@@ -187,7 +192,7 @@ lorem = ["foo"DIRECTORY_SEPARATOR"bar", PATH_SEPARATOR]
 ipsum = [PATH_SEPARATOR, "foo"DIRECTORY_SEPARATOR"bar"]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertEquals(E_USER_ERROR, $c->getItem('foo'));
         $this->assertEquals(PDO::ATTR_ERRMODE, $c->getItem('bar'));
         $this->assertEquals([E_USER_ERROR, E_USER_WARNING], $c->getItem('faa'));
@@ -204,7 +209,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $this->assertEquals('bar', $instantiator->getParam('foo'));
         $this->assertEquals('bat', $instantiator->getParam('baz'));
@@ -217,7 +222,7 @@ INI;
 setTimestamp[] = 123
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $dateTime = $c->getItem('date');
         $this->assertEquals(123, $dateTime->getTimestamp());
     }
@@ -236,7 +241,7 @@ query[] = "CREATE TABLE foo(id INT)"
 commit[] =
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $conn = $c->getItem('conn');
         $this->assertNotEmpty($conn->query('SELECT * FROM sqlite_master')->fetch());
     }
@@ -249,7 +254,7 @@ foo[abc] = bar
 foo[def] = bat
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $expected = [
             'abc' => 'bar',
@@ -267,7 +272,7 @@ foo[def] = bat
 baz = [bat, blz]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $expectedFoo = [
             'abc' => ['bat', 'blz'],
@@ -289,7 +294,7 @@ baz = [bat, [hi]]
 barr = [bat, [hi]]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo', true);
         $expectedFoo = [
             'abc' => ['bat', 'blz'],
@@ -309,12 +314,12 @@ INI;
         $this->assertEquals('ok', $c->getItem('foo', false));
     }
 
-    public function testClosureWithLoadedFile(): void
+    public function testClosureWithIniLoad(): void
     {
         $ini = <<<'INI'
 respect_blah = ""
 INI;
-        $c = new Container($ini);
+        $c = IniLoader::load($ini);
         $c['panda'] = static function () {
             return 'ok';
         };
@@ -333,7 +338,7 @@ child = [foo]
 child = [bar]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertFalse($GLOBALS['_SHIT_']);
         $GLOBALS['_SHIT_'] = false;
     }
@@ -346,7 +351,7 @@ INI;
 hello[] = ["opa", [bar]]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $foo = $c->getItem('foo');
         $this->assertInstanceOf(Bar::class, $foo->bar);
     }
@@ -365,7 +370,7 @@ INI;
 con = [pdo];
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         // __set replaces the Instantiator's pending instance
         $c->pdo = new PDO('sqlite::memory:');
         $this->assertSame($c->getItem('pdo'), $c->getItem('db')->c);
@@ -381,32 +386,32 @@ INI;
 date = [now];
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertInstanceOf(
             TypeHintWowMuchType::class,
             $c->getItem('typed'),
         );
     }
 
-    public function testLockedContainer(): void
+    public function testPrePopulatedContainer(): void
     {
         $ini = <<<'INI'
 foo = [undef]
 bar = [foo]
 INI;
-        $c = new Container(self::parseIni($ini));
-        $result = $c(['undef' => 'Hello']);
-        $this->assertEquals('Hello', $result->getItem('bar'));
+        $c = new Container(['undef' => 'Hello']);
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
+        $this->assertEquals('Hello', $c->getItem('bar'));
     }
 
-    public function testLockedContainer2(): void
+    public function testPrePopulatedContainer2(): void
     {
         $ini = <<<'INI'
 foo = [undef]
 bar = [foo]
 INI;
-        $c = new Container(self::parseIni($ini));
-        $c(['undef' => 'Hello']);
+        $c = new Container(['undef' => 'Hello']);
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $result = $c->getItem('bar');
         $this->assertEquals('Hello', $result);
     }
@@ -417,7 +422,7 @@ INI;
 [now new DateTime]
 datetime = now
 INI;
-        $c = new Container(self::parseIni($ini));
+        $c = IniLoader::load(self::parseIni($ini));
         $result = $c->getItem('now');
         $result2 = $c->getItem('now');
         $this->assertNotSame($result, $result2);
@@ -429,7 +434,7 @@ INI;
 [now DateTime]
 datetime = now
 INI;
-        $c = new Container(self::parseIni($ini));
+        $c = IniLoader::load(self::parseIni($ini));
         $result = $c->getItem('now');
         $result2 = $c->getItem('now');
         $this->assertSame($result, $result2);
@@ -441,7 +446,7 @@ INI;
 [instanceof DateTime]
 datetime = now
 INI;
-        $c = new Container(self::parseIni($ini));
+        $c = IniLoader::load(self::parseIni($ini));
         $called = false;
         $result = $c(static function (DateTime $date) use (&$called) {
             $called = true;
@@ -484,7 +489,7 @@ INI;
 foo = \Respect\Config\TestConstant::CONS_TEST
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertEquals(TestConstant::CONS_TEST, $c->getItem('foo'));
     }
 
@@ -495,7 +500,7 @@ INI;
 foo = \Respect\Test\Another\Cons::CONS_TEST
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         // The container resolves the aliased constant at runtime
         $this->assertEquals(TestConstant::CONS_TEST, $c->getItem('foo'));
     }
@@ -506,7 +511,7 @@ INI;
 [foo_bar \stdClass]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $instantiator = $c->getItem('foo_bar', true);
         $this->assertEquals('\stdClass', $instantiator->getClassName());
     }
@@ -520,16 +525,13 @@ INI;
 test = [foo_bar]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertEquals(get_class($c->getItem('foo_bar')), get_class($c->getItem('bar_foo')->test));
     }
 
     public function testIsset(): void
     {
-        $ini = <<<'INI'
-foo = bar
-INI;
-        $c = new Container(self::parseIni($ini));
+        $c = new Container(['foo' => 'bar']);
         $this->assertTrue(isset($c->foo));
         $this->assertFalse(isset($c->nonexistent));
     }
@@ -543,21 +545,14 @@ INI;
 
     public function testMagicGet(): void
     {
-        $ini = <<<'INI'
-foo = bar
-INI;
-        $c = new Container(self::parseIni($ini));
+        $c = new Container(['foo' => 'bar']);
         $this->assertEquals('bar', $c->__get('foo'));
     }
 
     public function testMagicCall(): void
     {
-        $ini = <<<'INI'
-foo = [undef]
-bar = [foo]
-INI;
-        $c = new Container(self::parseIni($ini));
-        $result = $c->__call('bar', [['undef' => 'Hello']]);
+        $c = new Container(['bar' => 'Hello']);
+        $result = $c->__call('bar', [['extra' => 'val']]);
         $this->assertEquals('Hello', $result);
     }
 
@@ -568,7 +563,7 @@ foo = bar
 baz = bat
 INI;
         $c = new Container();
-        $c->loadString($ini);
+        (new IniLoader($c))->fromString($ini);
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
@@ -578,26 +573,7 @@ INI;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid configuration string');
         $c = new Container();
-        $c->loadString('');
-    }
-
-    public function testDeferredConfigWithArray(): void
-    {
-        $c = new Container(['foo' => 'bar']);
-        $this->assertEquals('bar', $c->getItem('foo'));
-    }
-
-    public function testDeferredConfigWithIniString(): void
-    {
-        $c = new Container("foo = bar\nbaz = bat");
-        $this->assertEquals('bar', $c->getItem('foo'));
-        $this->assertEquals('bat', $c->getItem('baz'));
-    }
-
-    public function testDeferredConfigWithFile(): void
-    {
-        $c = new Container($this->vfsRoot . '/exists.ini');
-        $this->assertEquals('bar', $c->getItem('foo'));
+        (new IniLoader($c))->fromString('');
     }
 
     public function testHasReturnsFalseForNonExistentClass(): void
@@ -606,7 +582,7 @@ INI;
 [foo Respect\Config\NonExistentClass12345]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertFalse($c->has('foo'));
     }
 
@@ -616,7 +592,7 @@ INI;
 [foo DateTime]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertTrue($c->has('foo'));
     }
 
@@ -626,7 +602,7 @@ INI;
 [foo DateTime]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $raw = $c->getItem('foo', true);
         $this->assertInstanceOf(Instantiator::class, $raw);
     }
@@ -647,15 +623,16 @@ INI;
 [instanceof DateTime]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $this->assertInstanceOf(DateTime::class, $c->getItem('DateTime'));
     }
 
     public function testLoadMultipleArraysMergesState(): void
     {
         $c = new Container();
-        $c->loadArray(self::parseIni('foo = bar'));
-        $c->loadArray(self::parseIni('baz = bat'));
+        $loader = new IniLoader($c);
+        $loader->fromArray(self::parseIni('foo = bar'));
+        $loader->fromArray(self::parseIni('baz = bat'));
         $this->assertEquals('bar', $c->getItem('foo'));
         $this->assertEquals('bat', $c->getItem('baz'));
     }
@@ -667,7 +644,7 @@ name = world
 greetings = [hello, [name]]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $result = $c->getItem('greetings');
         $this->assertEquals(['hello', 'world'], $result);
     }
@@ -679,7 +656,7 @@ INI;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid configuration INI file');
         $c = new Container();
-        @$c->loadFile(vfsStream::url('bad') . '/unreadable.ini');
+        @(new IniLoader($c))->fromFile(vfsStream::url('bad') . '/unreadable.ini');
     }
 
     public function testLoadArrayWithInstantiatorValue(): void
@@ -687,7 +664,7 @@ INI;
         $i = new Instantiator('stdClass');
         $i->setParam('foo', 'bar');
         $c = new Container();
-        $c->loadArray(['myobj' => $i]);
+        (new IniLoader($c))->fromArray(['myobj' => $i]);
         $result = $c->getItem('myobj');
         $this->assertInstanceOf(stdClass::class, $result);
         $this->assertEquals('bar', $result->foo);
@@ -696,7 +673,7 @@ INI;
     public function testLoadArrayWithClosureValue(): void
     {
         $c = new Container();
-        $c->loadArray(['fn' => static fn() => 'result']);
+        (new IniLoader($c))->fromArray(['fn' => static fn() => 'result']);
         $this->assertEquals('result', $c->getItem('fn'));
     }
 
@@ -717,7 +694,7 @@ INI;
 [foo unknown stdClass]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $raw = $c->getItem('foo', true);
         $this->assertInstanceOf(Instantiator::class, $raw);
         $this->assertEquals('unknown stdClass', $raw->getClassName());
@@ -748,7 +725,7 @@ INI;
         $inner = new Instantiator('stdClass');
         $inner->setParam('x', 'y');
         $c = new Container();
-        $c->loadArray(['outer stdClass' => ['child' => $inner]]);
+        (new IniLoader($c))->fromArray(['outer stdClass' => ['child' => $inner]]);
         $result = $c->getItem('outer');
         $this->assertInstanceOf(stdClass::class, $result);
         $this->assertInstanceOf(stdClass::class, $result->child);
@@ -764,9 +741,17 @@ test = hello
 [consumer autowire Respect\Config\WheneverWithAProperty]
 INI;
         $c = new Container();
-        $c->loadArray(self::parseIni($ini));
+        (new IniLoader($c))->fromArray(self::parseIni($ini));
         $raw = $c->getItem('consumer', true);
         $this->assertInstanceOf(Autowire::class, $raw);
+    }
+
+    public function testInvokeWithArrayInjectsValues(): void
+    {
+        $c = new Container();
+        $result = $c(['foo' => 'bar']);
+        $this->assertSame($c, $result);
+        $this->assertEquals('bar', $c->getItem('foo'));
     }
 
     protected function tearDown(): void

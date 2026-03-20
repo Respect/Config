@@ -30,7 +30,7 @@ account = [user]
         $parsed = parse_ini_string($config, true);
         $this->assertIsArray($parsed);
         $config = array_merge($parsed[$environment], $parsed);
-        $container = new Container($config);
+        $container = IniLoader::load($config);
         $this->assertEquals($expected, $container->getItem('account'));
     }
 }
