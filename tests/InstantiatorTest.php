@@ -7,6 +7,7 @@ namespace Respect\Config;
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 use function date_default_timezone_set;
 use function func_num_args;
@@ -129,6 +130,91 @@ final class InstantiatorTest extends TestCase
         $i1->setParam('foo', $i2);
         $s = $i1();
         $this->assertEquals('stdClass', get_class($s->foo));
+    }
+
+    public function testGetClassName(): void
+    {
+        $i = new Instantiator('DateTime');
+        $this->assertEquals('DateTime', $i->getClassName());
+    }
+
+    public function testGetParam(): void
+    {
+        $i = new Instantiator('stdClass');
+        $i->setParam('foo', 'bar');
+        $this->assertEquals('bar', $i->getParam('foo'));
+    }
+
+    public function testGetParams(): void
+    {
+        $i = new Instantiator('stdClass');
+        $i->setParam('foo', 'bar');
+        $i->setParam('baz', 'bat');
+        $this->assertEquals(['foo' => 'bar', 'baz' => 'bat'], $i->getParams());
+    }
+
+    public function testSetInstance(): void
+    {
+        $i = new Instantiator('stdClass');
+        $obj = new stdClass();
+        $obj->custom = true;
+        $i->setInstance($obj);
+        $this->assertSame($obj, $i->getInstance());
+    }
+
+    public function testConstructorWithInitialParams(): void
+    {
+        $i = new Instantiator('stdClass', ['foo' => 'bar', 'baz' => 'bat']);
+        $s = $i->getInstance();
+        $this->assertEquals('bar', $s->foo);
+        $this->assertEquals('bat', $s->baz);
+    }
+
+    public function testTrailingNullParamsAreStripped(): void
+    {
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('foo', true);
+        $i->setParam('bar', null);
+        $i->setParam('baz', null);
+        $s = $i->getInstance();
+        $this->assertTrue($s->ok);
+        $this->assertNull($s->bar);
+        $this->assertNull($s->baz);
+    }
+
+    public function testMethodCallWithSingleNonArrayArg(): void
+    {
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('oneParam', [true]);
+        $s = $i->getInstance();
+        $this->assertTrue($s->ok);
+    }
+
+    public function testMethodCallWithNullArg(): void
+    {
+        $i = new Instantiator(__NAMESPACE__ . '\\TestClass');
+        $i->setParam('noParams', [null]);
+        $s = $i->getInstance();
+        $this->assertTrue($s->ok);
+    }
+
+    public function testStaticMethodReturningNonObject(): void
+    {
+        $i = new Instantiator(__NAMESPACE__ . '\\StaticNonObjectReturn');
+        $i->setParam('init', [[]]);
+        $s = $i->getInstance();
+        $this->assertInstanceOf(StaticNonObjectReturn::class, $s);
+        $this->assertTrue($s->ready);
+    }
+}
+
+class StaticNonObjectReturn
+{
+    public bool $ready = true;
+
+    public static function init(): string
+    {
+        return 'not_an_object';
     }
 }
 

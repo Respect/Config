@@ -11,6 +11,7 @@ use PDO;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\NotFoundExceptionInterface;
+use stdClass;
 
 use function chdir;
 use function class_alias;
@@ -523,6 +524,251 @@ INI;
         $this->assertEquals(get_class($c->getItem('foo_bar')), get_class($c->getItem('bar_foo')->test));
     }
 
+    public function testIsset(): void
+    {
+        $ini = <<<'INI'
+foo = bar
+INI;
+        $c = new Container(self::parseIni($ini));
+        $this->assertTrue(isset($c->foo));
+        $this->assertFalse(isset($c->nonexistent));
+    }
+
+    public function testSetMethod(): void
+    {
+        $c = new Container();
+        $c->set('key', 'value');
+        $this->assertEquals('value', $c->getItem('key'));
+    }
+
+    public function testMagicGet(): void
+    {
+        $ini = <<<'INI'
+foo = bar
+INI;
+        $c = new Container(self::parseIni($ini));
+        $this->assertEquals('bar', $c->__get('foo'));
+    }
+
+    public function testMagicCall(): void
+    {
+        $ini = <<<'INI'
+foo = [undef]
+bar = [foo]
+INI;
+        $c = new Container(self::parseIni($ini));
+        $result = $c->__call('bar', [['undef' => 'Hello']]);
+        $this->assertEquals('Hello', $result);
+    }
+
+    public function testLoadString(): void
+    {
+        $ini = <<<'INI'
+foo = bar
+baz = bat
+INI;
+        $c = new Container();
+        $c->loadString($ini);
+        $this->assertEquals('bar', $c->getItem('foo'));
+        $this->assertEquals('bat', $c->getItem('baz'));
+    }
+
+    public function testLoadStringInvalid(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid configuration string');
+        $c = new Container();
+        $c->loadString('');
+    }
+
+    public function testDeferredConfigWithArray(): void
+    {
+        $c = new Container(['foo' => 'bar']);
+        $this->assertEquals('bar', $c->getItem('foo'));
+    }
+
+    public function testDeferredConfigWithIniString(): void
+    {
+        $c = new Container("foo = bar\nbaz = bat");
+        $this->assertEquals('bar', $c->getItem('foo'));
+        $this->assertEquals('bat', $c->getItem('baz'));
+    }
+
+    public function testDeferredConfigWithFile(): void
+    {
+        $c = new Container($this->vfsRoot . '/exists.ini');
+        $this->assertEquals('bar', $c->getItem('foo'));
+    }
+
+    public function testHasReturnsFalseForNonExistentClass(): void
+    {
+        $ini = <<<'INI'
+[foo Respect\Config\NonExistentClass12345]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $this->assertFalse($c->has('foo'));
+    }
+
+    public function testHasReturnsTrueForValidInstantiator(): void
+    {
+        $ini = <<<'INI'
+[foo DateTime]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $this->assertTrue($c->has('foo'));
+    }
+
+    public function testGetItemRawReturnsInstantiator(): void
+    {
+        $ini = <<<'INI'
+[foo DateTime]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $raw = $c->getItem('foo', true);
+        $this->assertInstanceOf(Instantiator::class, $raw);
+    }
+
+    public function testClosureReceivesContainer(): void
+    {
+        $c = new Container();
+        $c['greeting'] = 'hello';
+        $c['result'] = static function (Container $container) {
+            return $container['greeting'] . ' world';
+        };
+        $this->assertEquals('hello world', $c->getItem('result'));
+    }
+
+    public function testInstanceofSyntax(): void
+    {
+        $ini = <<<'INI'
+[instanceof DateTime]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $this->assertInstanceOf(DateTime::class, $c->getItem('DateTime'));
+    }
+
+    public function testLoadMultipleArraysMergesState(): void
+    {
+        $c = new Container();
+        $c->loadArray(self::parseIni('foo = bar'));
+        $c->loadArray(self::parseIni('baz = bat'));
+        $this->assertEquals('bar', $c->getItem('foo'));
+        $this->assertEquals('bat', $c->getItem('baz'));
+    }
+
+    public function testVariableExpansionInSequence(): void
+    {
+        $ini = <<<'INI'
+name = world
+greetings = [hello, [name]]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $result = $c->getItem('greetings');
+        $this->assertEquals(['hello', 'world'], $result);
+    }
+
+    public function testLoadFileInvalidIni(): void
+    {
+        $vfs = vfsStream::setup('bad');
+        vfsStream::newFile('unreadable.ini', 0000)->at($vfs)->setContent('foo = bar');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid configuration INI file');
+        $c = new Container();
+        @$c->loadFile(vfsStream::url('bad') . '/unreadable.ini');
+    }
+
+    public function testLoadArrayWithInstantiatorValue(): void
+    {
+        $i = new Instantiator('stdClass');
+        $i->setParam('foo', 'bar');
+        $c = new Container();
+        $c->loadArray(['myobj' => $i]);
+        $result = $c->getItem('myobj');
+        $this->assertInstanceOf(stdClass::class, $result);
+        $this->assertEquals('bar', $result->foo);
+    }
+
+    public function testLoadArrayWithClosureValue(): void
+    {
+        $c = new Container();
+        $c->loadArray(['fn' => static fn() => 'result']);
+        $this->assertEquals('result', $c->getItem('fn'));
+    }
+
+    public function testGetItemWrapsReflectionException(): void
+    {
+        $this->expectException(NotFoundException::class);
+        $this->expectExceptionMessage('not found');
+        $c = new Container();
+        $i = new Instantiator(PrivateConstructorClass::class);
+        $i->setParam('__construct', ['x']);
+        $c['broken'] = $i;
+        $c->getItem('broken');
+    }
+
+    public function testUnknownInstantiatorModifier(): void
+    {
+        $ini = <<<'INI'
+[foo unknown stdClass]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $raw = $c->getItem('foo', true);
+        $this->assertInstanceOf(Instantiator::class, $raw);
+        $this->assertEquals('unknown stdClass', $raw->getClassName());
+    }
+
+    public function testOffsetSetWithAutowire(): void
+    {
+        $c = new Container();
+        $autowire = new Autowire(stdClass::class);
+        $c['myobj'] = $autowire;
+        $result = $c->getItem('myobj');
+        $this->assertInstanceOf(stdClass::class, $result);
+    }
+
+    public function testInvokeCallbackWithUntypedParam(): void
+    {
+        $c = new Container();
+        $c(new DateTime());
+        $result = $c(static function ($untyped, DateTime $date) {
+            return [$untyped, $date];
+        });
+        $this->assertNull($result[0]);
+        $this->assertInstanceOf(DateTime::class, $result[1]);
+    }
+
+    public function testParseValuePassesInstantiatorThrough(): void
+    {
+        $inner = new Instantiator('stdClass');
+        $inner->setParam('x', 'y');
+        $c = new Container();
+        $c->loadArray(['outer stdClass' => ['child' => $inner]]);
+        $result = $c->getItem('outer');
+        $this->assertInstanceOf(stdClass::class, $result);
+        $this->assertInstanceOf(stdClass::class, $result->child);
+        $this->assertEquals('y', $result->child->x);
+    }
+
+    public function testAutowireModifierInContainerCreatesAutowire(): void
+    {
+        $ini = <<<'INI'
+[dep Respect\Config\WheneverWithAProperty]
+test = hello
+
+[consumer autowire Respect\Config\WheneverWithAProperty]
+INI;
+        $c = new Container();
+        $c->loadArray(self::parseIni($ini));
+        $raw = $c->getItem('consumer', true);
+        $this->assertInstanceOf(Autowire::class, $raw);
+    }
+
     protected function tearDown(): void
     {
         if (!is_dir($this->originalCwd)) {
@@ -597,4 +843,14 @@ class TestConstant
 class WheneverWithAProperty
 {
     public mixed $test = null;
+}
+
+class PrivateConstructorClass
+{
+    public string $value = '';
+
+    private function __construct(string $x)
+    {
+        $this->value = $x;
+    }
 }
