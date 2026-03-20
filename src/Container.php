@@ -9,12 +9,15 @@ use Closure;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionNamedType;
 
 use function array_filter;
 use function array_map;
 use function assert;
+use function call_user_func;
+use function class_exists;
 use function constant;
 use function count;
 use function current;
@@ -47,7 +50,16 @@ class Container extends ArrayObject implements ContainerInterface
             $this->configure();
         }
 
-        return parent::offsetExists($id);
+        if (!parent::offsetExists($id)) {
+            return false;
+        }
+
+        $entry = $this[$id];
+        if ($entry instanceof Instantiator) {
+            return class_exists($entry->getClassName());
+        }
+
+        return true;
     }
 
     public function getItem(string $name, bool $raw = false): mixed
@@ -64,7 +76,11 @@ class Container extends ArrayObject implements ContainerInterface
             return $this[$name];
         }
 
-        return $this->lazyLoad($name);
+        try {
+            return $this->lazyLoad($name);
+        } catch (ReflectionException $e) {
+            throw new NotFoundException('Item ' . $name . ' not found: ' . $e->getMessage(), 0, $e);
+        }
     }
 
     public function get(string $id): mixed
@@ -97,11 +113,31 @@ class Container extends ArrayObject implements ContainerInterface
     {
         foreach ($this->state() + $configurator as $key => $value) {
             if ($value instanceof Closure) {
+                $this->offsetSet((string) $key, $value);
+                continue;
+            }
+
+            if ($value instanceof Instantiator) {
+                $this->offsetSet((string) $key, $value);
                 continue;
             }
 
             $this->parseItem($key, $value);
         }
+    }
+
+    public function offsetSet(mixed $key, mixed $value): void
+    {
+        if ($value instanceof Autowire) {
+            $value->setContainer($this);
+        }
+
+        parent::offsetSet($key, $value);
+    }
+
+    public function set(string $name, mixed $value): void
+    {
+        $this[$name] = $value;
     }
 
     protected function configure(): void
@@ -206,7 +242,7 @@ class Container extends ArrayObject implements ContainerInterface
         }
 
         /** @var class-string $keyClass */
-        $instantiator = new Instantiator($keyClass);
+        $instantiator = $this->createInstantiator($keyClass);
 
         if (is_array($value)) {
             foreach ($value as $property => $pValue) {
@@ -217,6 +253,23 @@ class Container extends ArrayObject implements ContainerInterface
         }
 
         $this->offsetSet($keyName, $instantiator);
+    }
+
+    /** @param class-string $keyClass */
+    protected function createInstantiator(string $keyClass): Instantiator
+    {
+        if (!str_contains($keyClass, ' ')) {
+            return new Instantiator($keyClass);
+        }
+
+        [$modifier, $className] = explode(' ', $keyClass, 2);
+
+        /** @var class-string $className */
+        return match ($modifier) {
+            'new' => new Factory($className),
+            'autowire' => new Autowire($className),
+            default => new Instantiator($keyClass),
+        };
     }
 
     protected function parseValue(mixed $value): mixed
@@ -319,11 +372,15 @@ class Container extends ArrayObject implements ContainerInterface
     protected function lazyLoad(string $name): mixed
     {
         $callback = $this[$name];
-        if ($callback instanceof Instantiator && $callback->getMode() !== Instantiator::MODE_FACTORY) {
+        if ($callback instanceof Instantiator && !$callback instanceof Factory) {
             return $this[$name] = $callback();
         }
 
-        return $callback();
+        if ($callback instanceof Closure) {
+            return $this[$name] = $callback($this);
+        }
+
+        return call_user_func($callback);
     }
 
     public function __isset(string $name): bool

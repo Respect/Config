@@ -10,28 +10,22 @@ use function call_user_func;
 use function call_user_func_array;
 use function count;
 use function end;
-use function explode;
 use function func_get_args;
 use function is_array;
 use function is_callable;
 use function is_object;
 use function key;
-use function str_contains;
 use function stripos;
-use function strtolower;
 
 class Instantiator
 {
-    public const false MODE_DEPENDENCY = false;
-    public const string MODE_FACTORY = 'new';
-
     protected mixed $instance = null;
 
-    /** @var ReflectionClass<object> */
-    protected ReflectionClass $reflection;
+    /** @var ReflectionClass<object>|null */
+    protected ReflectionClass|null $reflection = null;
 
-    /** @var array<string, mixed> */
-    protected array $constructor = [];
+    /** @var array<string, mixed>|null */
+    protected array|null $constructor = null;
 
     /** @var array<string, mixed> */
     protected array $params = [];
@@ -45,25 +39,15 @@ class Instantiator
     /** @var array<string, mixed> */
     protected array $propertySetters = [];
 
-    protected string|false $mode = self::MODE_DEPENDENCY;
-
-    /** @param class-string $className */
-    public function __construct(protected string $className)
+    /**
+     * @param class-string $className
+     * @param array<string, mixed> $params    Initial parameters (constructor, method, or property)
+     */
+    public function __construct(protected string $className, array $params = [])
     {
-        if (str_contains(strtolower($className), ' ')) {
-            [$mode, $className] = explode(' ', $className, 2);
-            $this->mode = $mode;
-            /** @var class-string $className */
-            $this->className = $className;
+        foreach ($params as $name => $value) {
+            $this->setParam($name, $value);
         }
-
-        $this->reflection = new ReflectionClass($className);
-        $this->constructor = $this->findConstructorParams($this->reflection);
-    }
-
-    public function getMode(): string|false
-    {
-        return $this->mode;
     }
 
     public function getClassName(): string
@@ -73,10 +57,6 @@ class Instantiator
 
     public function getInstance(bool $forceNew = false): mixed
     {
-        if ($this->mode === self::MODE_FACTORY) {
-            $this->instance = null;
-        }
-
         if ($this->instance && !$forceNew) {
             return $this->instance;
         }
@@ -98,15 +78,12 @@ class Instantiator
             );
         }
 
-        $constructor = $this->reflection->getConstructor();
-        $hasConstructor = $constructor ? $constructor->isPublic() : false;
         if (empty($instance)) {
-            if (empty($this->constructor) || !$hasConstructor) {
-                $instance = new $className();
+            $constructorParams = $this->cleanupParams($this->constructor ?? []);
+            if (empty($constructorParams)) {
+                $instance = $this->reflection()->newInstance();
             } else {
-                $instance = $this->reflection->newInstanceArgs(
-                    $this->cleanupParams($this->constructor),
-                );
+                $instance = $this->reflection()->newInstanceArgs($constructorParams);
             }
         }
 
@@ -156,6 +133,12 @@ class Instantiator
         return $this->params;
     }
 
+    /** @return ReflectionClass<object> */
+    protected function reflection(): ReflectionClass
+    {
+        return $this->reflection ??= new ReflectionClass($this->className);
+    }
+
     /**
      * @param array<mixed> $params
      *
@@ -163,12 +146,7 @@ class Instantiator
      */
     protected function cleanupParams(array $params): array
     {
-        while (end($params) === null) {
-            $key = key($params);
-            if ($key === null) {
-                break;
-            }
-
+        while (end($params) === null && ($key = key($params)) !== null) {
             unset($params[$key]);
         }
 
@@ -184,27 +162,6 @@ class Instantiator
         return $value instanceof self ? $value->getInstance() : $value;
     }
 
-    /**
-     * @param ReflectionClass<object> $class
-     *
-     * @return array<string, mixed>
-     */
-    protected function findConstructorParams(ReflectionClass $class): array
-    {
-        $params = [];
-        $constructor = $class->getConstructor();
-
-        if (!$constructor) {
-            return [];
-        }
-
-        foreach ($constructor->getParameters() as $param) {
-            $params[$param->getName()] = $param->isDefaultValueAvailable() ? $param->getDefaultValue() : null;
-        }
-
-        return $params;
-    }
-
     protected function processValue(mixed $value): mixed
     {
         if (is_array($value)) {
@@ -218,6 +175,16 @@ class Instantiator
 
     protected function matchConstructorParam(string $name): bool
     {
+        if ($this->constructor === null) {
+            $this->constructor = [];
+            $ctor = $this->reflection()->getConstructor();
+            if ($ctor) {
+                foreach ($ctor->getParameters() as $param) {
+                    $this->constructor[$param->getName()] = null;
+                }
+            }
+        }
+
         return array_key_exists($name, $this->constructor);
     }
 
@@ -229,13 +196,13 @@ class Instantiator
 
     protected function matchMethod(string $name): bool
     {
-        return $this->reflection->hasMethod($name);
+        return $this->reflection()->hasMethod($name);
     }
 
     protected function matchStaticMethod(string $name): bool
     {
-        return $this->reflection->hasMethod($name)
-            && $this->reflection->getMethod($name)->isStatic();
+        return $this->reflection()->hasMethod($name)
+            && $this->reflection()->getMethod($name)->isStatic();
     }
 
     /** @param array{string, mixed} $methodCalls */
