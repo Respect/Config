@@ -6,10 +6,8 @@ namespace Respect\Config;
 
 class Factory extends Instantiator
 {
-    public function getInstance(bool $forceNew = false): mixed
+    public function shouldCache(): bool
     {
-        $this->instance = null;
-
-        return parent::getInstance(true);
+        return false;
     }
 }

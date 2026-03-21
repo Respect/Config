@@ -297,6 +297,40 @@ INI;
         $this->assertEquals(['/path/one', '/path/two'], $instance->paths);
     }
 
+    public function testNestedAutowireReceivesContainer(): void
+    {
+        $container = new Container();
+        $dep = new AutowireDependency('shared');
+        $container[AutowireDependency::class] = $dep;
+
+        $autowire = new Autowire(AutowireWrapper::class, [
+            'inner' => new Autowire(AutowireTypedConsumer::class),
+        ]);
+        $autowire->setContainer($container);
+
+        $instance = $autowire->getInstance();
+        $this->assertInstanceOf(AutowireTypedConsumer::class, $instance->inner);
+        $this->assertSame($dep, $instance->inner->dep);
+    }
+
+    public function testDeeplyNestedAutowirePropagatesContainer(): void
+    {
+        $container = new Container();
+        $dep = new AutowireDependency('deep');
+        $container[AutowireDependency::class] = $dep;
+
+        $autowire = new Autowire(AutowireWrapper::class, [
+            'inner' => new Autowire(AutowireWrapper::class, [
+                'inner' => new Autowire(AutowireTypedConsumer::class),
+            ]),
+        ]);
+        $autowire->setContainer($container);
+
+        $instance = $autowire->getInstance();
+        $this->assertInstanceOf(AutowireWrapper::class, $instance->inner);
+        $this->assertSame($dep, $instance->inner->inner->dep);
+    }
+
     /** @return array<string, mixed> */
     private static function parseIni(string $ini): array
     {
@@ -360,6 +394,13 @@ class AutowireWithArray
 {
     /** @param array<string> $paths */
     public function __construct(public array $paths)
+    {
+    }
+}
+
+class AutowireWrapper
+{
+    public function __construct(public mixed $inner)
     {
     }
 }
