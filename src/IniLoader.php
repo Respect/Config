@@ -172,12 +172,12 @@ class IniLoader
     protected function parseInstantiator(string $key, mixed $value): void
     {
         $key = $this->removeDuplicatedSpaces($key);
+        /** @var class-string $keyClass */
         [$keyName, $keyClass] = explode(' ', $key, 2);
         if ($keyName === 'instanceof') {
             $keyName = $keyClass;
         }
 
-        /** @var class-string $keyClass */
         $instantiator = $this->createInstantiator($keyClass);
 
         if (is_array($value)) {
@@ -198,9 +198,9 @@ class IniLoader
             return new Instantiator($keyClass);
         }
 
+        /** @var class-string $className */
         [$modifier, $className] = explode(' ', $keyClass, 2);
 
-        /** @var class-string $className */
         return match ($modifier) {
             'new' => new Factory($className),
             'autowire' => new Autowire($className),

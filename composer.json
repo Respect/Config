@@ -36,7 +36,8 @@
     "autoload-dev": {
         "psr-4": {
             "Respect\\Config\\": "tests/"
-        }
+        },
+        "classmap": ["tests/Stubs/"]
     },
     "scripts": {
         "coverage": "vendor/bin/phpunit --coverage-text",

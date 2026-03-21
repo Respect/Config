@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use stdClass;
 
 use function date_default_timezone_set;
-use function func_num_args;
 use function get_class;
 
 #[CoversClass(Instantiator::class)]
@@ -215,69 +214,5 @@ final class InstantiatorTest extends TestCase
         $s = $i->getInstance();
         $this->assertInstanceOf(StaticNonObjectReturn::class, $s);
         $this->assertTrue($s->ready);
-    }
-}
-
-class StaticNonObjectReturn
-{
-    public bool $ready = true;
-
-    public static function init(): string
-    {
-        return 'not_an_object';
-    }
-}
-
-class TestClass
-{
-    public bool $ok = false;
-
-    public bool $myPropertyUsed = false;
-
-    public string $myProperty = 'foo';
-
-    public function __construct(mixed $foo = null, public mixed $bar = null, public mixed $baz = null)
-    {
-        if (!$foo) {
-            return;
-        }
-
-        $this->ok = true;
-    }
-
-    public function usingProperty(): void
-    {
-        if ($this->myProperty !== 'bar') {
-            return;
-        }
-
-        $this->myPropertyUsed = true;
-    }
-
-    public function noParams(): void
-    {
-        if (func_num_args() !== 0) {
-            return;
-        }
-
-        $this->ok = true;
-    }
-
-    public function oneParam(mixed $ok): void
-    {
-        if (!$ok) {
-            return;
-        }
-
-        $this->ok = true;
-    }
-
-    public function twoParams(mixed $ok, mixed $ok2): void
-    {
-        if (!$ok || !$ok2) {
-            return;
-        }
-
-        $this->ok = true;
     }
 }

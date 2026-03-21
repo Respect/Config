@@ -15,31 +15,4 @@
     <file>tests/</file>
 
     <rule ref="Respect" />
-
-    <!-- Instantiator dynamically invokes methods with loosely-typed INI data;
-         strict_types conflicts with call_user_func coercion requirements -->
-    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing">
-        <exclude-pattern>src/Instantiator.php</exclude-pattern>
-    </rule>
-
-    <!-- @var class-string narrowing for PHPStan on dynamic class names from INI -->
-    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.MissingVariable">
-        <exclude-pattern>src/</exclude-pattern>
-    </rule>
-
-    <!-- Test files contain inline fixture classes required by the DI container tests -->
-    <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
-        <exclude-pattern>tests/</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Classes.ClassFileName.NoMatch">
-        <exclude-pattern>tests/</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Classes.ValidClassName.NotPascalCase">
-        <exclude-pattern>tests/</exclude-pattern>
-    </rule>
-
-    <!-- Test fixture properties use snake_case to match INI config keys -->
-    <rule ref="Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps">
-        <exclude-pattern>tests/</exclude-pattern>
-    </rule>
 </ruleset>

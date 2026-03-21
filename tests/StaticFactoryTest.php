@@ -16,23 +16,11 @@ final class StaticFactoryTest extends TestCase
 {
     public function testInstance(): void
     {
-        $i = new Instantiator(__NAMESPACE__ . '\\StaticTest');
+        $i = new Instantiator(__NAMESPACE__ . '\\StaticFactoryStub');
         $i->setParam('factory', [[]]);
         $ref = new ReflectionObject($i);
         $prop = $ref->getProperty('staticMethodCalls');
         $this->assertNotEmpty($prop->getValue($i));
         $this->assertInstanceOf(DateTime::class, $i->getInstance());
-    }
-}
-
-class StaticTest
-{
-    private function __construct()
-    {
-    }
-
-    public static function factory(): DateTime
-    {
-        return new DateTime();
     }
 }

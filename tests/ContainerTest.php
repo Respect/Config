@@ -328,19 +328,19 @@ INI;
 
     public function testLazyLoadinessOnMultipleConfigLevels(): void
     {
-        $GLOBALS['_SHIT_'] = false;
+        $GLOBALS['_SIDE_EFFECT_'] = false;
         $ini = <<<'INI'
-[foo Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
+[foo Respect\Config\SideEffectOnConstruct]
 child = ""
-[bar Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
+[bar Respect\Config\SideEffectOnConstruct]
 child = [foo]
-[baz Respect\Config\WheneverIBornIPopulateAGlobalCalled_SHIT_]
+[baz Respect\Config\SideEffectOnConstruct]
 child = [bar]
 INI;
         $c = new Container();
         (new IniLoader($c))->fromArray(self::parseIni($ini));
-        $this->assertFalse($GLOBALS['_SHIT_']);
-        $GLOBALS['_SHIT_'] = false;
+        $this->assertFalse($GLOBALS['_SIDE_EFFECT_']);
+        $GLOBALS['_SIDE_EFFECT_'] = false;
     }
 
     public function testSequencesConstructingLazy(): void
@@ -362,7 +362,7 @@ INI;
             $this->markTestSkipped('SQLite PDO driver not available');
         }
 
-        $GLOBALS['_SHIT_'] = false;
+        $GLOBALS['_SIDE_EFFECT_'] = false;
         $ini = <<<'INI'
 [pdo StdClass]
 
@@ -378,7 +378,6 @@ INI;
 
     public function testPascuttiTypeHintIssue40(): void
     {
-        $GLOBALS['_MERD_'] = false;
         $ini = <<<'INI'
 [now DateTime]
 
@@ -722,72 +721,5 @@ INI;
         self::assertIsArray($result);
 
         return $result;
-    }
-}
-
-class Bar
-{
-}
-
-class Foo
-{
-    public mixed $bar = null;
-
-    public static function hey(DateTime $date): DateTime
-    {
-        return $date;
-    }
-
-    public function hello(mixed $some, Bar $bar): void
-    {
-        $this->bar = $bar;
-    }
-}
-
-class WheneverIBornIPopulateAGlobalCalled_SHIT_
-{
-    public function __construct()
-    {
-        $GLOBALS['_SHIT_'] = true;
-    }
-}
-
-class DatabaseWow
-{
-    public mixed $c;
-
-    public function __construct(mixed $con)
-    {
-        $this->c = $con;
-    }
-}
-
-class TypeHintWowMuchType
-{
-    public DateTime $d;
-
-    public function __construct(DateTime $date)
-    {
-        $this->d = $date;
-    }
-}
-
-class TestConstant
-{
-    public const string CONS_TEST = 'XPTO';
-}
-
-class WheneverWithAProperty
-{
-    public mixed $test = null;
-}
-
-class PrivateConstructorClass
-{
-    public string $value = '';
-
-    private function __construct(string $x)
-    {
-        $this->value = $x;
     }
 }
