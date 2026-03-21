@@ -369,6 +369,40 @@ INI;
         $this->assertEquals(IniLoaderTestConstant::VALUE, $container->getItem('foo'));
     }
 
+    public function testNumericCoercionInteger(): void
+    {
+        $c = IniLoader::load(self::parseIni('val = 42'));
+        $this->assertSame(42, $c->getItem('val'));
+    }
+
+    public function testNumericCoercionZero(): void
+    {
+        $c = IniLoader::load(self::parseIni('val = 0'));
+        $this->assertSame(0, $c->getItem('val'));
+    }
+
+    public function testNumericCoercionFloat(): void
+    {
+        $c = IniLoader::load(self::parseIni('val = 3.14'));
+        $this->assertSame(3.14, $c->getItem('val'));
+    }
+
+    public function testNumericCoercionScientific(): void
+    {
+        $c = IniLoader::load(self::parseIni('val = 1e3'));
+        $this->assertSame(1000.0, $c->getItem('val'));
+    }
+
+    public function testNumericCoercionNegative(): void
+    {
+        $ini = <<<'INI'
+[obj DateTime]
+setTimestamp[] = -1
+INI;
+        $c = IniLoader::load(self::parseIni($ini));
+        $this->assertSame(-1, $c->getItem('obj')->getTimestamp());
+    }
+
     /** @return array<string, mixed> */
     private static function parseIni(string $ini): array
     {

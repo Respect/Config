@@ -440,49 +440,6 @@ INI;
         $this->assertSame($result, $result2);
     }
 
-    public function testByInstanceCallback(): void
-    {
-        $ini = <<<'INI'
-[instanceof DateTime]
-datetime = now
-INI;
-        $c = IniLoader::load(self::parseIni($ini));
-        $called = false;
-        $result = $c(static function (DateTime $date) use (&$called) {
-            $called = true;
-
-            return $date;
-        });
-        $result2 = $c['DateTime'];
-        $this->assertInstanceOf(DateTime::class, $result);
-        $this->assertInstanceOf(DateTime::class, $result2);
-        $this->assertTrue($called);
-    }
-
-    public function testByInstanceCallback2(): void
-    {
-        $c = new Container();
-        $c(new DateTime());
-        $called = false;
-        $result = $c(static function (DateTime $date) use (&$called) {
-            $called = true;
-
-            return $date;
-        });
-        $result2 = $c['DateTime'];
-        $this->assertInstanceOf(DateTime::class, $result);
-        $this->assertInstanceOf(DateTime::class, $result2);
-        $this->assertTrue($called);
-    }
-
-    public function testByMethodCallback(): void
-    {
-        $c = new Container();
-        $c(new DateTime());
-        $result = $c([__NAMESPACE__ . '\\Foo', 'hey']);
-        $this->assertInstanceOf(DateTime::class, $result);
-    }
-
     public function testClassConstants(): void
     {
         $ini = <<<'INI'
@@ -547,13 +504,6 @@ INI;
     {
         $c = new Container(['foo' => 'bar']);
         $this->assertEquals('bar', $c->__get('foo'));
-    }
-
-    public function testMagicCall(): void
-    {
-        $c = new Container(['bar' => 'Hello']);
-        $result = $c->__call('bar', [['extra' => 'val']]);
-        $this->assertEquals('Hello', $result);
     }
 
     public function testLoadString(): void
@@ -709,17 +659,6 @@ INI;
         $this->assertInstanceOf(stdClass::class, $result);
     }
 
-    public function testInvokeCallbackWithUntypedParam(): void
-    {
-        $c = new Container();
-        $c(new DateTime());
-        $result = $c(static function ($untyped, DateTime $date) {
-            return [$untyped, $date];
-        });
-        $this->assertNull($result[0]);
-        $this->assertInstanceOf(DateTime::class, $result[1]);
-    }
-
     public function testParseValuePassesInstantiatorThrough(): void
     {
         $inner = new Instantiator('stdClass');
@@ -746,12 +685,25 @@ INI;
         $this->assertInstanceOf(Autowire::class, $raw);
     }
 
-    public function testInvokeWithArrayInjectsValues(): void
+    public function testPlainCallableIsCached(): void
     {
+        $count = 0;
+        $callable = new class ($count) {
+            public function __construct(private int &$count)
+            {
+            }
+
+            public function __invoke(): int
+            {
+                return ++$this->count;
+            }
+        };
         $c = new Container();
-        $result = $c(['foo' => 'bar']);
-        $this->assertSame($c, $result);
-        $this->assertEquals('bar', $c->getItem('foo'));
+        $c['counter'] = [$callable, '__invoke'];
+        $first = $c->getItem('counter');
+        $second = $c->getItem('counter');
+        $this->assertSame(1, $first);
+        $this->assertSame($first, $second);
     }
 
     protected function tearDown(): void

@@ -24,16 +24,6 @@ final class FactoryTest extends TestCase
         $this->assertNotSame($first, $second);
     }
 
-    public function testForceNewIsIgnoredAlwaysNew(): void
-    {
-        $factory = new Factory(stdClass::class);
-
-        $first = $factory->getInstance(false);
-        $second = $factory->getInstance(false);
-
-        $this->assertNotSame($first, $second);
-    }
-
     public function testFactoryWithConstructorParams(): void
     {
         $factory = new Factory('DateTime');

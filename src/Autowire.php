@@ -8,8 +8,6 @@ use Psr\Container\ContainerInterface;
 use ReflectionNamedType;
 
 use function array_key_exists;
-use function end;
-use function key;
 
 class Autowire extends Instantiator
 {
@@ -21,41 +19,44 @@ class Autowire extends Instantiator
     }
 
     /** @inheritDoc */
-    protected function cleanupParams(array $params): array
+    protected function cleanupParams(array $params, bool $forConstructor = true): array
     {
         $constructor = $this->reflection()->getConstructor();
-        if ($constructor && $this->container) {
+        $container = $this->container;
+        if ($forConstructor && $constructor && $container) {
             foreach ($constructor->getParameters() as $param) {
                 $name = $param->getName();
                 if (array_key_exists($name, $this->params)) {
                     $value = $params[$name] ?? null;
                     if ($value instanceof Ref) {
-                        $params[$name] = $this->container->get($value->id);
+                        $params[$name] = $container->get($value->id);
                     } else {
+                        $this->propagateContainer($value);
                         $params[$name] = $this->lazyLoad($value);
                     }
-
-                    continue;
+                } else {
+                    $type = $param->getType();
+                    if (
+                        $type instanceof ReflectionNamedType && !$type->isBuiltin()
+                        && $container->has($type->getName())
+                    ) {
+                        $params[$name] = $container->get($type->getName());
+                    }
                 }
-
-                $type = $param->getType();
-                if (
-                    !($type instanceof ReflectionNamedType) || $type->isBuiltin()
-                    || !$this->container->has($type->getName())
-                ) {
-                    continue;
-                }
-
-                $params[$name] = $this->container->get($type->getName());
             }
 
-            while (end($params) === null && ($key = key($params)) !== null) {
-                unset($params[$key]);
-            }
-
-            return $params;
+            return $this->stripTrailingNulls($params);
         }
 
         return parent::cleanupParams($params);
+    }
+
+    protected function propagateContainer(mixed $value): void
+    {
+        if (!$value instanceof self || $value->container !== null || $this->container === null) {
+            return;
+        }
+
+        $value->setContainer($this->container);
     }
 }

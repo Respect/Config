@@ -7,15 +7,13 @@ namespace Respect\Config;
 use Closure;
 use InvalidArgumentException;
 
-use function array_filter;
 use function constant;
 use function count;
-use function current;
 use function defined;
 use function explode;
 use function file_exists;
 use function is_array;
-use function is_object;
+use function is_numeric;
 use function is_string;
 use function parse_ini_file;
 use function parse_ini_string;
@@ -23,6 +21,7 @@ use function preg_match;
 use function preg_replace;
 use function preg_replace_callback;
 use function str_contains;
+use function strstr;
 use function trim;
 
 class IniLoader
@@ -82,14 +81,24 @@ class IniLoader
     /** @param array<string, mixed> $configurator */
     public function fromArray(array $configurator): Container
     {
-        foreach ($this->state() + $configurator as $key => $value) {
+        foreach ($configurator as $key => $value) {
+            $stringKey = (string) $key;
+
+            // State takes precedence: use existing non-Instantiator value instead
+            if (
+                $this->container->offsetExists($stringKey)
+                && !$this->container[$stringKey] instanceof Instantiator
+            ) {
+                $value = $this->container[$stringKey];
+            }
+
             if ($value instanceof Closure) {
-                $this->container->offsetSet((string) $key, $value);
+                $this->container->offsetSet($stringKey, $value);
                 continue;
             }
 
             if ($value instanceof Instantiator) {
-                $this->container->offsetSet((string) $key, $value);
+                $this->container->offsetSet($stringKey, $value);
                 continue;
             }
 
@@ -99,18 +108,11 @@ class IniLoader
         return $this->container;
     }
 
-    /** @return array<string, mixed> */
-    protected function state(): array
+    protected function existingKeyFrom(string $key): string|false
     {
-        return array_filter(
-            $this->container->getArrayCopy(),
-            static fn($v): bool => !is_object($v) || !$v instanceof Instantiator,
-        );
-    }
+        $k = strstr($key, ' ', true) ?: $key;
 
-    protected function keyHasStateInstance(string $key, mixed &$k): bool
-    {
-        return $this->container->offsetExists($k = current(explode(' ', $key)));
+        return $this->container->offsetExists($k) ? $k : false;
     }
 
     protected function keyHasInstantiator(string $key): bool
@@ -122,8 +124,9 @@ class IniLoader
     {
         $key = trim((string) $key);
         if ($this->keyHasInstantiator($key)) {
-            if ($this->keyHasStateInstance($key, $k)) {
-                $this->container->offsetSet($key, $this->container[$k]);
+            $existingKey = $this->existingKeyFrom($key);
+            if ($existingKey !== false) {
+                $this->container->offsetSet($key, $this->container[$existingKey]);
             } else {
                 $this->parseInstantiator($key, $value);
             }
@@ -146,7 +149,7 @@ class IniLoader
         return $value;
     }
 
-    protected function parseStandardItem(string $key, mixed &$value): void
+    protected function parseStandardItem(string $key, mixed $value): void
     {
         if (is_array($value)) {
             $this->parseSubValues($value);
@@ -159,6 +162,10 @@ class IniLoader
 
     protected function removeDuplicatedSpaces(string $string): string
     {
+        if (!str_contains($string, '  ')) {
+            return $string;
+        }
+
         return (string) preg_replace('/\s+/', ' ', $string);
     }
 
@@ -211,7 +218,7 @@ class IniLoader
             return $this->parseSubValues($value);
         }
 
-        if (empty($value)) {
+        if ($value === '' || $value === null) {
             return null;
         }
 
@@ -241,6 +248,12 @@ class IniLoader
     {
         if (preg_match('/^[\\\\a-zA-Z_]+([:]{2}[A-Z_]+)?$/', $value) && defined($value)) {
             return constant($value);
+        }
+
+        if (is_numeric($value)) {
+            $isFloat = str_contains($value, '.') || str_contains($value, 'e') || str_contains($value, 'E');
+
+            return $isFloat ? (float) $value : (int) $value;
         }
 
         return $value;
