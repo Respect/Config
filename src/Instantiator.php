@@ -2,6 +2,7 @@
 
 namespace Respect\Config;
 
+use InvalidArgumentException;
 use ReflectionClass;
 
 use function array_key_exists;
@@ -159,6 +160,10 @@ class Instantiator
 
     protected function lazyLoad(mixed $value): mixed
     {
+        if ($value instanceof Ref) {
+            throw new InvalidArgumentException('Ref can only be used with Autowire, not ' . static::class);
+        }
+
         return $value instanceof self ? $value->getInstance() : $value;
     }
 

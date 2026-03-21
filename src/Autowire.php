@@ -28,7 +28,13 @@ class Autowire extends Instantiator
             foreach ($constructor->getParameters() as $param) {
                 $name = $param->getName();
                 if (array_key_exists($name, $this->params)) {
-                    $params[$name] = $this->lazyLoad($params[$name] ?? null);
+                    $value = $params[$name] ?? null;
+                    if ($value instanceof Ref) {
+                        $params[$name] = $this->container->get($value->id);
+                    } else {
+                        $params[$name] = $this->lazyLoad($value);
+                    }
+
                     continue;
                 }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Respect\Config;
 
 use DateTimeZone;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -196,6 +197,15 @@ final class InstantiatorTest extends TestCase
         $i->setParam('noParams', [null]);
         $s = $i->getInstance();
         $this->assertTrue($s->ok);
+    }
+
+    public function testRefThrowsInInstantiator(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Ref can only be used with Autowire');
+        $i = new Instantiator(stdClass::class);
+        $i->setParam('foo', new Ref('some.key'));
+        $i->getInstance();
     }
 
     public function testStaticMethodReturningNonObject(): void
