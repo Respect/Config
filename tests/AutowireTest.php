@@ -226,6 +226,77 @@ INI;
         $this->assertEquals('lazy_loaded', $instance->dep->value);
     }
 
+    public function testRefResolvesClassDependencyByStringKey(): void
+    {
+        $container = new Container();
+        $dep = new AutowireDependency('via_ref');
+        $container['my.custom.dep'] = $dep;
+
+        $autowire = new Autowire(AutowireTypedConsumer::class);
+        $autowire->setContainer($container);
+        $autowire->setParam('dep', new Ref('my.custom.dep'));
+
+        $instance = $autowire->getInstance();
+        $this->assertSame($dep, $instance->dep);
+    }
+
+    public function testRefResolvesNonClassDependency(): void
+    {
+        $container = new Container();
+        $container['app.name'] = 'MyApp';
+
+        $autowire = new Autowire(AutowireWithBuiltin::class);
+        $autowire->setContainer($container);
+        $autowire->setParam('name', new Ref('app.name'));
+
+        $instance = $autowire->getInstance();
+        $this->assertEquals('MyApp', $instance->name);
+    }
+
+    public function testRefCoexistsWithTypeBasedAutowiring(): void
+    {
+        $container = new Container();
+        $container['DateTime'] = new DateTime('2024-01-15');
+        $container['custom.dep'] = new AutowireDependency('from_ref');
+
+        $autowire = new Autowire(AutowireMultiParam::class);
+        $autowire->setContainer($container);
+        // Only bind 'dep' via Ref; 'date' should be autowired by type
+        $autowire->setParam('dep', new Ref('custom.dep'));
+
+        $instance = $autowire->getInstance();
+        $this->assertInstanceOf(DateTime::class, $instance->date);
+        $this->assertEquals('from_ref', $instance->dep->value);
+    }
+
+    public function testRefTakesPrecedenceOverTypeBasedAutowiring(): void
+    {
+        $container = new Container();
+        $container['DateTime'] = new DateTime('2024-01-15');
+        $container[AutowireDependency::class] = new AutowireDependency('from_type');
+        $container['override.dep'] = new AutowireDependency('from_ref');
+
+        $autowire = new Autowire(AutowireTypedConsumer::class);
+        $autowire->setContainer($container);
+        $autowire->setParam('dep', new Ref('override.dep'));
+
+        $instance = $autowire->getInstance();
+        $this->assertEquals('from_ref', $instance->dep->value);
+    }
+
+    public function testRefResolvesArrayDependency(): void
+    {
+        $container = new Container();
+        $container['app.paths'] = ['/path/one', '/path/two'];
+
+        $autowire = new Autowire(AutowireWithArray::class);
+        $autowire->setContainer($container);
+        $autowire->setParam('paths', new Ref('app.paths'));
+
+        $instance = $autowire->getInstance();
+        $this->assertEquals(['/path/one', '/path/two'], $instance->paths);
+    }
+
     /** @return array<string, mixed> */
     private static function parseIni(string $ini): array
     {
@@ -281,6 +352,14 @@ class AutowireTypedConsumer
 class AutowireAllOptional
 {
     public function __construct(public DateTime|null $a = null, public DateTime|null $b = null)
+    {
+    }
+}
+
+class AutowireWithArray
+{
+    /** @param array<string> $paths */
+    public function __construct(public array $paths)
     {
     }
 }
