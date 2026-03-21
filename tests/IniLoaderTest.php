@@ -412,8 +412,3 @@ INI;
         return $result;
     }
 }
-
-class IniLoaderTestConstant
-{
-    public const string VALUE = 'XPTO';
-}

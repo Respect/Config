@@ -54,30 +54,3 @@ hello = [hello]
         $this->assertEquals($expected, (string) $container->getItem('hello'));
     }
 }
-
-class MyLazyLoadedHelloWorldConsumer
-{
-    protected string $string;
-
-    public function __construct(mixed $hello)
-    {
-        $this->string = $hello;
-    }
-
-    public function __toString(): string
-    {
-        return $this->string;
-    }
-}
-
-class MyLazyLoadedHelloWorld
-{
-    public function __construct(protected string $string)
-    {
-    }
-
-    public function __toString(): string
-    {
-        return $this->string;
-    }
-}
