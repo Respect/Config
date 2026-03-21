@@ -8,8 +8,8 @@ A tiny, fully featured dependency injection container as a DSL.
 
 ## Table of contents
 
-- [Contributing](CONTRIBUTING.md)
-- [Feature Guide](docs/README.md)
+- [Feature Guide](docs/README.md) - Full feature guide.
+- [INI DSL](docs/DSL.md) - Support for .ini files.
 - [Installation](docs/INSTALL.md)
+- [Contributing](CONTRIBUTING.md)
 - [License](LICENSE.md)
-- [What is a DSL?](docs/DSL.md)

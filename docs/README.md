@@ -1,204 +1,273 @@
 # Feature Guide
 
-## Variable Expanding
+## Getting Started
 
-myconfig.ini:
+Respect\Config is a lightweight dependency injection container. It implements PSR-11 (`ContainerInterface`) and supports lazy loading, autowiring, and factory patterns.
 
-````ini
-db_driver = "mysql"
-db_host   = "localhost"
-db_name   = "my_database"
-db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
-````
+It also optionally supports container declarations as INI files.
 
-myapp.php:
+---
 
-````php
-$c = new Container('myconfig.ini');
-echo $c->db_dsn; //mysql:host=localhost;dbname=my_database
-````
+Build a container programmatically:
+```php
+$container = new Container([
+    'debug' => true,
+    'locale' => 'en_US',
+]);
+echo $container->get('locale'); // en_US
+```
 
-Note that this works only for variables without ini [sections].
+**Alternatively**, you can load configuration from an INI file:
+```php
+$container = IniLoader::load('services.ini'); // INI path or INI-like string
+```
 
-## Sequences
+The choice is yours: pure PHP, or declarative INI containers.
+All the features below can also be declared in INI files: see the
+[INI DSL Guide](DSL.md) for the full syntax reference.
 
-myconfig.ini:
+## Simple Values
 
-````ini
-allowed_users = [foo,bar,baz]
-````
+Plain values are stored directly in the container:
 
-myapp.php:
+```php
+$container = new Container([
+    'app_name' => 'My Application',
+    'per_page' => 20,
+    'tax_rate' => 0.075,
+]);
+```
 
-````php
-$c = new Container('myconfig.ini');
-print_r($c->allowed_users); //array('foo', 'bar', 'baz')
-````
+Values can also be set after construction:
 
-Variable expanding also works on sequences. You can express something like this:
-
-myconfig.ini:
-
-````ini
-admin_user = foo
-allowed_users = [[admin_user],bar,baz]
-````
-
-myapp.php:
-
-````php
-$c = new Container('myconfig.ini');
-print_r($c->allowed_users); //array('foo', 'bar', 'baz')
-````
-
-## Constant Evaluation
-
-myconfig.ini:
-
-````ini
-error_mode = PDO::ERRMODE_EXCEPTION
-````
-
-Needless to say that this would work on sequences too.
+```php
+$container['cache_ttl'] = 3600;
+$container->set('debug', false);
+```
 
 ## Instances
 
-Using sections
+Use `Instantiator` to register a class that will be instantiated on demand.
+Constructor parameters are matched by name via reflection:
 
-myconfig.ini:
+```php
+$container = new Container([
+    'connection' => new Instantiator(PDO::class, [
+        'dsn' => 'sqlite:app.db', // only the parameters you need, by name
+    ]),
+]);
 
-````ini
-[something stdClass]
-````
+$pdo = $container->get('connection');           // PDO, only created when you access
+assert($pdo === $container->get('connection')); // accessing again yields same instance
+```
 
-myapp.php:
+## Instance References
 
-````php
-$c = new Container('myconfig.ini');
-echo get_class($c->something); //stdClass
-````
+Pass an `Instantiator` as a parameter value to wire services together.
+It will be resolved automatically when the parent is instantiated:
 
-Using names
+```php
+class Mapper {
+    public function __construct(public PDO $db) {}
+}
 
-myconfig.ini:
+$connection = new Instantiator(PDO::class, ['dsn' => 'sqlite:app.db']);
 
-````ini
-date DateTime = now
-````
+$container = new Container([
+    'connection' => $connection,
+    'mapper' => new Instantiator(Mapper::class, [
+        'db' => $connection,
+    ]),
+]);
+```
 
-myapp.php:
+ 1. References are resolved lazily: the referenced service is instantiated only
+    when the dependent service needs it.
+ 2. Passing the same `Instantiator` object to multiple consumers ensures
+    they all share a single instance.
 
-````php
-$c = new Container('myconfig.ini');
-echo get_class($c->something); //DateTime
-````
+## Method Calls
 
-## Callbacks
+Sometimes, you want to call methods to configure the instance you just created.
+You can make those into injection parameters as well.
 
-myconfig.ini:
+Each inner array represents one call's arguments:
 
-````ini
-db_driver = "mysql"
-db_host   = "localhost"
-db_name   = "my_database"
-db_user   = "my_user"
-db_pass   = "my_pass"
-db_dsn    = "[db_driver]:host=[db_host];dbname=[db_name]"
-````
+```php
+$connection = new Instantiator(PDO::class, ['dsn' => 'sqlite:app.db']);
+$connection->setParam('setAttribute', [
+    [PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION],
+    [PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC],
+]);
+$connection->setParam('exec', [
+    ['PRAGMA journal_mode=WAL'],
+    ['PRAGMA foreign_keys=ON'],
+]);
 
+$container = new Container(['connection' => $connection]);
+$container->get('connection'); // PDO with attributes set and PRAGMAs executed
+```
 
-myapp.php:
+## Static Factory Methods
 
-````php
-$c = new Container('myconfig.ini');
-$c->connection = function() use($c) {
-    return new PDO($c->db_dsn, $c->db_user, $c->db_pass);
-};
-echo get_class($c->connection); //PDO
-````
+Some instances require you to invoke a factory method, like
+`DateTime::createFromFormat` which returns an instance of `DateTime`.
 
-## Instance Passing
+You can also express those as injection parameters, and the Instantiator
+will understand they're a factory when loaded:
 
-myconfig.ini:
+```php
+$y2k = new Instantiator(DateTime::class);
+$y2k->setParam('createFromFormat', [['Y-m-d', '2000-01-01']]);
 
-````ini
-[myClass DateTime]
+$container = new Container(['y2k' => $y2k]);
+$container->get('y2k'); // DateTime for 2000-01-01
+```
 
-[anotherClass stdClass]
-myProperty = [myClass]
-````
+## Properties
 
-myapp.php:
+Names that don't match a constructor parameter or method are set as public
+properties on the instance:
 
-````php
-$c = new Container('myconfig.ini');
-echo get_class($c->myClass); //DateTime
-echo get_class($c->anotherClass); //stdClass
-echo get_class($c->myClass->myProperty); //DateTime
-````
+```php
+class Request {
+    public int $timeout = 10;
+    public string $base_url = '';
+}
 
-Obviously, this works on sequences too.
+$container = new Container([
+    'request' => new Instantiator(Request::class, [
+        'timeout' => 30,
+        'base_url' => 'https://api.example.com',
+    ]),
+]);
 
-## Instance Constructor Parameters
+$container->get('request')->base_url; // 'https://api.example.com'
+```
 
-Parameter names by reflection:
+The resolution order is: constructor parameter -> static method -> instance method -> property.
 
-myconfig.ini:
+## Closures
 
-````ini
-[connection PDO]
-dsn      = "mysql:host=localhost;dbname=my_database"
-username = "my_user"
-password = "my_pass"
-````
+Register closures for full programmatic control. The container is passed as
+the argument:
 
-Method call by sequence:
+```php
+$container = new Container([
+    'dsn' => 'sqlite:app.db',
+    'connection' => function (Container $c) {
+        $pdo = new PDO($c->get('dsn'));
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $pdo;
+    },
+]);
 
-myconfig.ini:
+$container->get('connection'); // PDO instance
+```
 
-````ini
-[connection PDO]
-__construct = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]
-````
+## Autowiring
 
-Using Names and Sequences:
+Autowire resolves constructor dependencies automatically by matching type hints
+against the container:
 
-myconfig.ini:
+```php
+class UserRepository {
+    public function __construct(public PDO $db) {}
+}
 
-````ini
-connection PDO = ["mysql:host=localhost;dbname=my_database", "my_user", "my_pass"]
-````
+$container = new Container([
+    PDO::class => new Instantiator(PDO::class, ['dsn' => 'sqlite:app.db']),
+    'repository' => new Autowire(UserRepository::class),
+]);
+```
 
-## Instantiation by Static Factory Methods
+The `PDO` instance is injected automatically because the container has an
+entry keyed by `PDO`, matching the type hint on the constructor.
 
-myconfig.ini:
+## Ref: Explicit References
 
-````ini
-[y2k DateTime]
-createFromFormat[] = [Y-m-d H:i:s, 2000-01-01 00:00:01]
-````
+Use `Ref` to inject a specific container entry into an Autowire parameter:
+whether to de-ambiguate instances with the same type, or to wire a plain 
+value like an array or string:
 
-## Instance Method Calls
+```php
+class UserRepository {
+    public function __construct(public PDO $db, public array $ignoredPaths) {}
+}
 
-myconfig.ini:
+$container = new Container([
+    'primary_db' => new Instantiator(PDO::class, ['dsn' => 'sqlite:primary.db']),
+    'replica_db' => new Instantiator(PDO::class, ['dsn' => 'sqlite:replica.db']),
+    'ignored_paths' => ['/var/log', '/tmp'],
+    'rule_namespaces' => ['App\\Validators'],
+    'repository' => new Autowire(UserRepository::class, [
+        'db' => new Ref('replica_db'),              // Ref to de-ambiguate autowiring
+        'ignoredPaths' => new Ref('ignored_paths'), // Ref to auto-wire non-class
+    ]),
+]);
+```
 
-````ini
-[connection PDO]
-dsn             = "mysql:host=localhost;dbname=my_database"
-username        = "my_user"
-password        = "my_pass"
-setAttribute    = [PDO::ATTR_ERRMODE, PDO::ATTR_EXCEPTION]
-exec[]          = "SET NAMES UTF-8"
-````
+`Ref` can only be used with `Autowire`, not with plain `Instantiator`.
 
-## Instance Properties
+## Factory (Fresh Instances)
 
-myconfig.ini:
+By default, instances are cached. Use `Factory` to create a fresh instance on
+every access:
 
-````ini
-[something stdClass]
-foo = "bar"
-````
+```php
+class PostController {
+    public function __construct(public Mapper $mapper) {}
+}
+
+$container = new Container([
+    'controller' => new Factory(PostController::class, [
+        'mapper' => new Autowire(Mapper::class),
+    ]),
+]);
+
+$first  = $container->get('controller'); // new PostController
+$second = $container->get('controller'); // another new PostController
+assert($first !== $second);
+```
+
+## Multiple Config Sources
+
+`IniLoader` can load from files, strings, or arrays, and can layer configurations
+onto an existing container:
+
+```php
+$container = new Container(['env' => 'production']);
+IniLoader::load('base.ini', $container);
+IniLoader::load('overrides.ini', $container);
+```
+
+Existing non-Instantiator values take precedence: if `env` is already set as a 
+plain value, a subsequent INI load will not overwrite it.
+
+## Error Handling
+
+The container throws `Respect\Config\NotFoundException` (which implements
+`Psr\Container\NotFoundExceptionInterface`) when accessing a missing key:
+
+```php
+$container->get('nonexistent'); // throws NotFoundException
+```
+
+Use `has()` to check before accessing:
+
+```php
+if ($container->has('cache')) {
+    $cache = $container->get('cache');
+}
+```
+
+Other exceptions that may be thrown:
+
+ * `InvalidArgumentException`: from `IniLoader` when the input is not a valid
+   INI file, string, or array; or from `Instantiator` when a `Ref` is used
+   without `Autowire`.
+ * `ReflectionException`: wrapped in `NotFoundException` when an Instantiator
+   cannot reflect on the target class (e.g. class not found).
 
 ***
 
@@ -206,6 +275,6 @@ See also:
 
 - [Home](../README.md)
 - [Contributing](../CONTRIBUTING.md)
+- [INI DSL Guide](DSL.md)
 - [Installation](INSTALL.md)
 - [License](../LICENSE.md)
-- [What is a DSL?](DSL.md)
