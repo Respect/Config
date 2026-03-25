@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Respect\Config;
 
 use Psr\Container\ContainerInterface;
-use ReflectionNamedType;
-
-use function array_key_exists;
+use Respect\Parameter\Resolver;
 
 class Autowire extends Instantiator
 {
@@ -24,28 +22,16 @@ class Autowire extends Instantiator
         $constructor = $this->reflection()->getConstructor();
         $container = $this->container;
         if ($forConstructor && $constructor && $container) {
-            foreach ($constructor->getParameters() as $param) {
-                $name = $param->getName();
-                if (array_key_exists($name, $this->params)) {
-                    $value = $params[$name] ?? null;
-                    if ($value instanceof Ref) {
-                        $params[$name] = $container->get($value->id);
-                    } else {
-                        $this->propagateContainer($value);
-                        $params[$name] = $this->lazyLoad($value);
-                    }
+            foreach ($params as $name => $value) {
+                if ($value instanceof Ref) {
+                    $params[$name] = $container->get($value->id);
                 } else {
-                    $type = $param->getType();
-                    if (
-                        $type instanceof ReflectionNamedType && !$type->isBuiltin()
-                        && $container->has($type->getName())
-                    ) {
-                        $params[$name] = $container->get($type->getName());
-                    }
+                    $this->propagateContainer($value);
+                    $params[$name] = $this->lazyLoad($value);
                 }
             }
 
-            return $this->stripTrailingNulls($params);
+            return $this->stripTrailingNulls((new Resolver($container))->resolveNamed($constructor, $params));
         }
 
         return parent::cleanupParams($params);

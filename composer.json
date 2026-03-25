@@ -19,7 +19,8 @@
     },
     "require": {
         "php": ">=8.5",
-        "psr/container": "^2.0"
+        "psr/container": "^2.0",
+        "respect/parameter": "^1.0"
     },
     "require-dev": {
         "mikey179/vfsstream": "^1.6",
