@@ -31,7 +31,7 @@ class Autowire extends Instantiator
                 }
             }
 
-            return $this->stripTrailingNulls((new Resolver($container))->resolveNamed($constructor, $params));
+            return $this->stripTrailingNulls((new Resolver($container))->resolve($constructor, $params));
         }
 
         return parent::cleanupParams($params);
