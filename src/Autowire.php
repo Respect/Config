@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Respect\Config;
 
 use Psr\Container\ContainerInterface;
-use Respect\Parameter\Resolver;
+use Respect\Parameter\ContainerResolver;
 
 class Autowire extends Instantiator
 {
@@ -31,7 +31,7 @@ class Autowire extends Instantiator
                 }
             }
 
-            return $this->stripTrailingNulls((new Resolver($container))->resolve($constructor, $params));
+            return $this->stripTrailingNulls((new ContainerResolver($container))->resolve($constructor, $params));
         }
 
         return parent::cleanupParams($params);
